@@ -209,25 +209,32 @@ def parse_doc(md):
 
 # ---------- Human-in-the-Loop Map ----------
 
+# Short keys the page uses as chips, by reason title. Any reason title not listed here stops the run.
+REASON_KEYS = {"Required by law or policy": "Law", "Authority over money or liability": "Authority", "Stuck": "Stuck",
+               "Physical world or no API": "No-API", "Relationship": "Relationship"}
+
 def parse_hitl(md):
     secs, order = split_h(md, 2)
     head = [l for l in secs.pop("_head").split("\n") if l.strip()]
     lede = " ".join(clean(l) for l in head[2:])  # title, byline, then the lede paragraphs
+    reasons_title = next((t for t in order if re.fullmatch(r'(Four|Five|Six) reasons a human is needed', t)), None)
+    if not reasons_title: die("HITL: no 'N reasons a human is needed' section")
     reasons = []
-    for line in secs.pop("Four reasons a human is needed").split("\n"):
+    for line in secs.pop(reasons_title).split("\n"):
         m = re.match(r'\d+\.\s+\*\*(.+?)\.?\*\*\s*(.*)', line)
         if m: reasons.append([clean(m.group(1)), clean(m.group(2))])
         elif line.strip(): die(f"HITL reasons: non-list line {line[:60]!r}")
-    if len(reasons) != 4: die(f"HITL: {len(reasons)} reasons, expected 4")
-    # short keys the page uses as chips: first word of each title
-    keys = {"Required by law or policy": "Law", "Authority over money or liability": "Authority", "Stuck": "Stuck", "Physical world or no API": "No-API"}
-    reasons = [[keys.get(t, t), t + ". " + body if not body.startswith(t) else body] for t, body in reasons]
+    expected = {"Four": 4, "Five": 5, "Six": 6}[reasons_title.split()[0]]
+    if len(reasons) != expected: die(f"HITL: {len(reasons)} reasons, heading says {expected}")
+    unknown = [t for t, _ in reasons if t not in REASON_KEYS]
+    if unknown: die(f"HITL: reason with no chip key: {unknown}; add it to REASON_KEYS")
+    reasons = [[REASON_KEYS[t], t + ". " + body if not body.startswith(t) else body] for t, body in reasons]
     rule = clean(secs.pop("Design rule"))
     _, roles = md_table(secs.pop("Roles").split("\n"), 2)
     _, points = md_table(secs.pop("Human points by workflow").split("\n"), 4)
     open_ = [clean(l[2:]) for l in secs.pop("Open").split("\n") if l.startswith("- ")]
     if secs: die(f"HITL: unknown sections {list(secs)}")
-    return {"lede": lede, "reasons": reasons, "rule": rule, "roles": roles, "points": points, "open": open_}
+    return {"lede": lede, "reasonsTitle": reasons_title, "reasons": reasons, "rule": rule, "roles": roles, "points": points, "open": open_}
 
 # ---------- Record Retention Table ----------
 

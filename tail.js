@@ -1,5 +1,4 @@
 
-
 // Links to the other master docs. Not content: these are the spine's own links.
 const DOCS = [
   ["Helix Domains & Workflows (master doc)", "https://claude.ai/artifact/52bJejmTcBnvzPnxngdHhz"],
@@ -182,7 +181,7 @@ function humanPointsFor(w) { return HITL.points.filter(p => (WFNAME_ALIAS[p[0]] 
 function renderHumans() {
   const n = HITL.points.filter(p => p[1] && !/^None expected/.test(p[1])).length;
   return `<div class="dhead"><p class="eyebrow"><b>Humans</b><span>${n} human points, ${HITL.roles.length} roles</span></p><h1>Human-in-the-loop map</h1><p class="lead">${md(HITL.lede)}</p></div>
-  <h2 class="parth">Four reasons a human is needed</h2><div class="reasons">${HITL.reasons.map(r => `<div><b><span class="rsn" data-r="${esc(r[0])}">${esc(r[0])}</span></b>${md(r[1])}</div>`).join("")}</div>
+  <h2 class="parth">${esc(HITL.reasonsTitle)}</h2><div class="reasons">${HITL.reasons.map(r => `<div><b><span class="rsn" data-r="${esc(r[0])}">${esc(r[0])}</span></b>${md(r[1])}</div>`).join("")}</div>
   <h2 class="parth">Design rule</h2><div class="prose">${mdBlocks(HITL.rule)}</div>
   <h2 class="parth">Roles</h2><div class="tblwrap"><table><thead><tr><th>Role</th><th>Owns</th></tr></thead><tbody>${HITL.roles.map(r => `<tr><td>${md(r[0])}</td><td>${md(r[1])}</td></tr>`).join("")}</tbody></table></div>
   <h2 class="parth">Human points by workflow</h2><div class="tblwrap hp"><table><thead><tr><th>Workflow</th><th>Human point</th><th>Reason</th><th>Role</th></tr></thead><tbody>${HITL.points.map(p => { const w = wfFor(p[0]); const nm = w ? `<a href="#${w.slug}">${tq(p[0])}</a>` : tq(p[0]); return `<tr><td>${nm}</td><td>${md(p[1])}</td><td>${reasonChips(p[2])}</td><td>${md(p[3])}</td></tr>`; }).join("")}</tbody></table></div>
