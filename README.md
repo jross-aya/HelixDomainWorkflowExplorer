@@ -1,2 +1,15 @@
-# HelixDomainWorkflowExplorer
-Code the rebuilds the Helix Domain and Workflows Explorer
+# Explorer generator (v2, November 6, 2026)
+
+Builds the Explorer page from the three master Docs. Nothing on the page is typed by hand.
+
+    python3 gen.py doc.md hitl.md retention.md head.html tail.js > index.html
+
+Inputs: markdown exports of Helix Domains & Workflows (doc.md), Helix Human-in-the-Loop Map (hitl.md),
+Helix Record Retention Table (retention.md). head.html and tail.js are the page's CSS and JavaScript,
+taken from the live page on November 6, 2026; style changes go there, never in index.html.
+
+The parser stops on anything it does not recognize (a new field label, a new section, a table with the
+wrong column count). It warns when a workflow has no "Applies to" line (no type chips) and when a
+Human-in-the-Loop row names a workflow the Doc does not have.
+
+Regenerate and publish to https://claude.ai/artifact/2P9cNRF9giRyFwbJrdY1PF after every Doc change.
