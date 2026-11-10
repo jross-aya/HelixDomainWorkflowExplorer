@@ -172,7 +172,8 @@ def parse_rules(body):
     recs_md, _, assumptions = rest.partition("\n### Assumptions")
     if not assumptions: die("Rules: no 'Assumptions' section")
     rec_lede = [clean(l) for l in recs_md.split("\n") if l.strip() and not l.startswith("|")]
-    _, records = md_table(recs_md.split("\n"), 3)
+    hdr, records = md_table(recs_md.split("\n"), 4)
+    if hdr[2] != "Created by": die(f"Records table: third column must be 'Created by', got {hdr[2]!r}")
     assum_title, _, assum_body = assumptions.partition("\n")
     assum = [clean(l[2:]) for l in assum_body.split("\n") if l.startswith("- ")]
     stray = [l for l in assum_body.split("\n") if l.strip() and not l.startswith("- ")]

@@ -143,13 +143,15 @@ function stateList(sent) {
   return ok ? parts : null;
 }
 function recordCard(r, idx) {
-  const sents = splitSentences(r[2]);
+  const sents = splitSentences(r[3]);
+  const creators = r[2].split(/;\s*/).filter(Boolean).map(c => { const m = c.match(/^(.*?)\s*(\(.*\))?$/); const w = WF.find(w => w.name === m[1].trim()); return w ? `<a class="creator" href="#${w.slug}">${tq(m[1])}${m[2] ? `<small>${tq(m[2])}</small>` : ""}</a>` : `<span class="creator">${tq(c)}</span>`; }).join("");
   const dom = DOMAINS.find(d => r[1].startsWith(d.name) || (d.id==="job-pricing" && r[1].startsWith("Pricing")) || (d.id==="foundational-data" && r[1].startsWith("Foundational")));
   let states = null, si = -1;
   for (let i = 0; i < Math.min(sents.length, 3); i++) { const st = stateList(sents[i]); if (st) { states = st; si = i; break; } }
   const rest = sents.filter((_, i) => i !== si);
   const summary = rest.shift() || "";
   return `<section class="rec${dom ? " d" : ""}" data-i="${idx % 4}"${dom ? ` style="--h:${dom.hue}"` : ""}><div class="rechd"><h2>${md(r[0])}</h2>${ownerChip(r[1])}</div>
+    ${creators ? `<p class="created"><span class="lbl">Created by</span>${creators}</p>` : ""}
     ${states ? `<div class="states">${states.map(s => `<span class="st">${md(s)}</span>`).join("")}</div>` : ""}
     ${summary ? `<p class="recsum">${md(summary)}</p>` : ""}
     ${rest.length ? `<details class="recmore"><summary>Details <span>${rest.length} ${rest.length === 1 ? "note" : "notes"}</span></summary><ul>${rest.map(x => `<li>${md(x)}</li>`).join("")}</ul></details>` : ""}</section>`;

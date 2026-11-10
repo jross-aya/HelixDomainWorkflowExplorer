@@ -1,4 +1,4 @@
-# Explorer generator (v3, November 6, 2026)
+# Explorer generator (v4, November 10, 2026)
 
 Builds the Explorer page from the three master Docs. Nothing on the page is typed by hand.
 
@@ -15,5 +15,11 @@ wrong column count, a reason title with no chip key). It warns when a workflow h
 v3: the Human-in-the-Loop reasons section may be headed "Four", "Five" or "Six reasons a human is needed";
 the count must match the list. Reason titles map to chip keys in REASON_KEYS in gen.py (Relationship added);
 a new reason title needs a key there and a .rsn color rule in head.html. The page reads the heading from the Doc.
+
+v4: the "Shared record state machines" table has four columns: Record, Owner, Created by, Why it must be
+defined first. "Created by" lists the workflows that create the record, separated by "; ", each optionally
+followed by a parenthetical such as "(Predicted)". Each name must match a workflow heading in the Doc; the
+page renders it as a chip linking to that workflow's card. The parser stops if the third header is not
+"Created by".
 
 Regenerate and publish to https://claude.ai/artifact/2P9cNRF9giRyFwbJrdY1PF after every Doc change.
