@@ -14,7 +14,8 @@ const STAGES = [
   { id: "setup", name: "Set up", sc: "var(--amber)", ids: ["client-contracts", "jobs", "talent", "job-pricing"] },
   { id: "match", name: "Match & submit", sc: "var(--coral)", ids: ["matching", "fulfillment"] },
   { id: "place", name: "Place", sc: "var(--violet)", ids: ["employment-agreements", "compliance", "mobilization"] },
-  { id: "work", name: "Work", sc: "var(--aqua)", ids: ["work-support", "finance"] }
+  { id: "work", name: "Work", sc: "var(--aqua)", ids: ["finance"] },
+  { id: "alongside", name: "Alongside", sc: "var(--aqua)", ids: ["talent-advocacy", "client-advocacy"] }
 ];
 const slug = s => s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const RESERVED = new Set(["settings","sidebar","customize","upgrade","downloads"]);

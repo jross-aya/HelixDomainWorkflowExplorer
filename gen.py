@@ -29,8 +29,9 @@ META_DOMAINS = {
     "Employment Agreements": dict(id="employment-agreements", hue=225, layer="Layer 6", type="Supporting"),
     "Compliance": dict(id="compliance", hue=95, layer="Layer 3", type="Supporting + Generic"),
     "Mobilization": dict(id="mobilization", hue=320, layer="Layer 7", type="Core"),
-    "Work Support": dict(id="work-support", hue=140, layer="Layer 8", type="Supporting"),
     "Finance": dict(id="finance", hue=245, layer="Layer 9", type="Generic + Supporting"),
+    "Talent Advocacy": dict(id="talent-advocacy", hue=140, layer="Alongside", type="Core"),
+    "Client Advocacy": dict(id="client-advocacy", hue=15, layer="Alongside", type="Core"),
 }
 FIELDS = ["Key decision", "Decision", "Turns on when", "Applies to", "Tasks", "Emits", "Measure", "Edge cases"]
 REQUIRED = ["Key decision", "Turns on when", "Tasks", "Emits", "Measure"]
