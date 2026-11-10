@@ -92,7 +92,7 @@ function wfHtml(w, open) {
     ${w.added ? `<p class="added">${md(w.added)}</p>` : ""}
     <p class="decision">${md(w.decision)}</p>
     <dl class="grid">
-      ${w.types.length ? `<dt>Employment types</dt><dd><div class="types">${w.types.map(t => `<span class="tt" title="${t==='IRP'?'Per Diem × client-employed; not a sixth employment type':''}">${esc(t==='IRP'?'IRP (Per Diem × client-employed)':t)}</span>`).join("")}</div><ul class="typenotes">${w.typeNotes.map(s => `<li>${md(s)}</li>`).join("")}</ul></dd>` : ""}
+      ${w.types.length ? `<dt>Employment types</dt><dd><div class="types">${w.types.map(t => `<span class="tt" title="${t==='IRP'?'Per Diem × client-employed; not a type of its own':''}">${esc(t==='IRP'?'IRP (Per Diem × client-employed)':t)}</span>`).join("")}</div><ul class="typenotes">${w.typeNotes.map(s => `<li>${md(s)}</li>`).join("")}</ul></dd>` : ""}
       <dt>Listens for</dt><dd>${md(w.triggers)}</dd>
       <dt>Tasks</dt><dd><ul>${w.tasks.map(t => `<li>${md(t)}</li>`).join("")}</ul></dd>
       <dt>Emits</dt><dd>${w.emits.map(e => `<span class="ev" role="button" tabindex="0" data-ev="${esc(e)}">${tq(e)}</span>`).join("")}${w.emitsNote ? `<span class="note">${md(w.emitsNote)}</span>` : ""}</dd>
@@ -161,8 +161,12 @@ function renderRecords() {
   <div class="recs">${RECORDS.map((r, i) => recordCard(r, i)).join("")}</div>`;
 }
 function renderRules() {
+  const wc = DOC.rules.workClassification || [];
+  const blocks = wc.map(b => b.p != null ? `<p>${md(b.p)}</p>`
+    : `<div class="tblwrap wc"><table><thead><tr>${b.table.head.map(c => `<th>${md(c)}</th>`).join("")}</tr></thead><tbody>${b.table.rows.map(r => `<tr>${r.map(c => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("");
   return `<div class="dhead"><p class="eyebrow"><b>Rules</b><span>${RULES.length} rules, every workflow</span></p><h1>Rules that apply to every workflow</h1><p class="lead">${md(DOC.rules.lede)}</p></div>
-  <ol class="rules">${RULES.map(r => `<li><div><b>${md(r[0])}</b>${md(r[1])}</div></li>`).join("")}</ol>`;
+  <ol class="rules">${RULES.map(r => `<li><div><b>${md(r[0])}</b>${md(r[1])}</div></li>`).join("")}</ol>
+  ${wc.length ? `<h2 class="parth">Work Classification</h2><div class="prose">${blocks}</div>` : ""}`;
 }
 function renderOpen() {
   const o = DOC.open; const groups = o.groups.slice().reverse();

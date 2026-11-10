@@ -13,8 +13,8 @@ recognize stops the run; nothing is dropped silently.
 """
 import json, re, sys
 
-TYPES = ["Travel", "Per Diem", "WFD", "Locums", "Perm", "IRP"]
-FIVE = TYPES[:5]
+TYPES = ["Travel", "Per Diem", "WFD", "Locums", "Perm", "Local Long Term", "IRP"]
+HELIX = TYPES[:6]  # the Helix employment types; IRP is Per Diem x client-employed
 
 # Presentation only. Keyed by the Doc's "## " heading.
 META_DOMAINS = {
@@ -73,8 +73,10 @@ def applies(line):
     """'Applies to' line -> ordered list of types it runs for."""
     s = line
     pos, neg = re.split(r'\bNot\b|\bnot\b', s, 1) if re.search(r'\bNot\b|\bnot\b', s) else (s, "")
-    if re.search(r'all (five|six) employment types', pos):
-        types = list(FIVE) + (["IRP"] if "IRP" in pos else [])
+    if re.search(r'all six employment types', pos):
+        types = list(HELIX) + (["IRP"] if "IRP" in pos else [])
+    elif re.search(r'all five employment types', pos):
+        die(f"Applies to line still says five types (there are six): {line[:80]!r}")
     else:
         types = [t for t in TYPES if re.search(r'\b' + re.escape(t) + r'\b', pos)]
     if not types: die(f"Applies to line names no type: {line[:80]!r}")
@@ -161,14 +163,34 @@ def parse_domain(title, body):
             d["workflows"].append(parse_workflow(wname, secs[wname]))
     return d
 
+def parse_blocks(md):
+    """Prose lines and pipe tables, in order, as a list of {"p": text} | {"table": {"head": [...], "rows": [...]}}."""
+    out, tbl = [], []
+    def flush():
+        if tbl:
+            n = len(tbl[0].strip().strip("|").split(" | "))
+            head, rows = md_table(tbl, n)
+            out.append({"table": {"head": head, "rows": rows}}); tbl.clear()
+    for line in md.split("\n"):
+        if line.startswith("|"): tbl.append(line)
+        else:
+            flush()
+            if line.strip(): out.append({"p": clean(line)})
+    flush()
+    return out
+
 def parse_rules(body):
     main, _, rest = body.partition("\n### Shared record state machines")
     if not rest: die("Rules: no 'Shared record state machines' section")
+    main, _, wc_md = main.partition("\n### Work Classification")
+    if not wc_md: die("Rules: no 'Work Classification' section between the rules and the record table")
     lede, items = [], []
     for line in main.split("\n"):
         m = re.match(r'\d+\.\s+\*\*(.+?)\*\*\s*(.*)', line)
         if m: items.append([clean(m.group(1)), clean(m.group(2))])
         elif line.strip(): lede.append(clean(line))
+    wc = parse_blocks(wc_md)
+    if sum(1 for b in wc if "table" in b) < 1: die("Work Classification: no inputs table")
     recs_md, _, assumptions = rest.partition("\n### Assumptions")
     if not assumptions: die("Rules: no 'Assumptions' section")
     rec_lede = [clean(l) for l in recs_md.split("\n") if l.strip() and not l.startswith("|")]
@@ -178,7 +200,7 @@ def parse_rules(body):
     assum = [clean(l[2:]) for l in assum_body.split("\n") if l.startswith("- ")]
     stray = [l for l in assum_body.split("\n") if l.strip() and not l.startswith("- ")]
     if stray: die(f"Assumptions: non-list text {stray[0][:60]!r}")
-    return {"lede": " ".join(lede), "rules": items, "recordsLede": " ".join(rec_lede), "records": records,
+    return {"lede": " ".join(lede), "rules": items, "workClassification": wc, "recordsLede": " ".join(rec_lede), "records": records,
             "assumptionsTitle": clean(assum_title), "assumptions": assum}
 
 def parse_open(body):
@@ -271,7 +293,7 @@ def main():
           + "const RETENTION = " + json.dumps(ret, ensure_ascii=False, indent=1) + ";\n")
     sys.stdout.write(rd(sys.argv[4]) + js + rd(sys.argv[5]))
     n = sum(len(d["workflows"]) for d in doc["domains"])
-    print(f"domains={len(doc['domains'])} workflows={n} records={len(doc['rules']['records'])} rules={len(doc['rules']['rules'])} "
+    print(f"domains={len(doc['domains'])} workflows={n} records={len(doc['rules']['records'])} rules={len(doc['rules']['rules'])} wc-inputs={len(doc['rules']['workClassification'][1]['table']['rows']) if 'table' in doc['rules']['workClassification'][1] else 0} "
           f"open={sum(len(g['items']) for g in doc['open']['groups'])} hitl-points={len(hitl['points'])} retention-rows={len(ret['rows'])}", file=sys.stderr)
 
 if __name__ == "__main__": main()

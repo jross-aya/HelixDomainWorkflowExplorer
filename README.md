@@ -1,4 +1,4 @@
-# Explorer generator (v4, November 10, 2026)
+# Explorer generator (v5, November 10, 2026)
 
 Builds the Explorer page from the three master Docs. Nothing on the page is typed by hand.
 
@@ -23,3 +23,5 @@ page renders it as a chip linking to that workflow's card. The parser stops if t
 "Created by".
 
 Regenerate and publish to https://claude.ai/artifact/2P9cNRF9giRyFwbJrdY1PF after every Doc change.
+
+v5: six Helix employment types (Local Long Term added; `HELIX` replaces `FIVE`); an Applies-to line saying "all five employment types" stops the run. The Doc's "### Work Classification" section, between the numbered rules and "### Shared record state machines", is parsed as prose blocks and pipe tables in order (`rules.workClassification`) and rendered on the Rules view under the rules list.
