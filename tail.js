@@ -93,7 +93,7 @@ function wfHtml(w, open) {
     <p class="decision">${md(w.decision)}</p>
     <dl class="grid">
       ${w.types.length ? `<dt>Employment types</dt><dd><div class="types">${w.types.map(t => `<span class="tt" title="${t==='IRP'?'Per Diem × client-employed; not a sixth employment type':''}">${esc(t==='IRP'?'IRP (Per Diem × client-employed)':t)}</span>`).join("")}</div><ul class="typenotes">${w.typeNotes.map(s => `<li>${md(s)}</li>`).join("")}</ul></dd>` : ""}
-      <dt>Turns on when</dt><dd>${md(w.triggers)}</dd>
+      <dt>Listens for</dt><dd>${md(w.triggers)}</dd>
       <dt>Tasks</dt><dd><ul>${w.tasks.map(t => `<li>${md(t)}</li>`).join("")}</ul></dd>
       <dt>Emits</dt><dd>${w.emits.map(e => `<span class="ev" role="button" tabindex="0" data-ev="${esc(e)}">${tq(e)}</span>`).join("")}${w.emitsNote ? `<span class="note">${md(w.emitsNote)}</span>` : ""}</dd>
       <dt>Measure</dt><dd>${md(w.measure)}</dd>

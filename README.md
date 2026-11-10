@@ -16,7 +16,7 @@ v3: the Human-in-the-Loop reasons section may be headed "Four", "Five" or "Six r
 the count must match the list. Reason titles map to chip keys in REASON_KEYS in gen.py (Relationship added);
 a new reason title needs a key there and a .rsn color rule in head.html. The page reads the heading from the Doc.
 
-v4: the "Shared record state machines" table has four columns: Record, Owner, Created by, Why it must be
+v4: the workflow field "Turns on when" is renamed "Listens for" in the Doc and in FIELDS/REQUIRED; the parser stops on the old label. The "Shared record state machines" table has four columns: Record, Owner, Created by, Why it must be
 defined first. "Created by" lists the workflows that create the record, separated by "; ", each optionally
 followed by a parenthetical such as "(Predicted)". Each name must match a workflow heading in the Doc; the
 page renders it as a chip linking to that workflow's card. The parser stops if the third header is not

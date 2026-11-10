@@ -33,8 +33,8 @@ META_DOMAINS = {
     "Talent Advocacy": dict(id="talent-advocacy", hue=140, layer="Alongside", type="Core"),
     "Client Advocacy": dict(id="client-advocacy", hue=15, layer="Alongside", type="Core"),
 }
-FIELDS = ["Key decision", "Decision", "Turns on when", "Applies to", "Tasks", "Emits", "Measure", "Edge cases"]
-REQUIRED = ["Key decision", "Turns on when", "Tasks", "Emits", "Measure"]
+FIELDS = ["Key decision", "Decision", "Listens for", "Applies to", "Tasks", "Emits", "Measure", "Edge cases"]
+REQUIRED = ["Key decision", "Listens for", "Tasks", "Emits", "Measure"]
 
 def die(msg): raise SystemExit("gen.py: " + msg)
 
@@ -124,7 +124,7 @@ def parse_workflow(name, body, part=None):
             w["emits"] = [e.strip() for e in re.split(r",\s*(?![^()]*\))", first.rstrip(".")) if e.strip()]
             if note: w["emitsNote"] = " ".join(note)
         elif label == "Key decision": w["decision"] = clean(val)
-        elif label == "Turns on when": w["triggers"] = clean(val)
+        elif label == "Listens for": w["triggers"] = clean(val)
         elif label == "Applies to": w["applies"] = clean(val)
         elif label == "Measure": w["measure"] = clean(val)
         elif label == "Edge cases":
