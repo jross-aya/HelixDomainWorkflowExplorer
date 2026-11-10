@@ -293,7 +293,8 @@ def main():
           + "const RETENTION = " + json.dumps(ret, ensure_ascii=False, indent=1) + ";\n")
     sys.stdout.write(rd(sys.argv[4]) + js + rd(sys.argv[5]))
     n = sum(len(d["workflows"]) for d in doc["domains"])
-    print(f"domains={len(doc['domains'])} workflows={n} records={len(doc['rules']['records'])} rules={len(doc['rules']['rules'])} wc-inputs={len(doc['rules']['workClassification'][1]['table']['rows']) if 'table' in doc['rules']['workClassification'][1] else 0} "
+    wc_rows = next(len(b["table"]["rows"]) for b in doc["rules"]["workClassification"] if "table" in b)  # first table; parse_rules guarantees one
+    print(f"domains={len(doc['domains'])} workflows={n} records={len(doc['rules']['records'])} rules={len(doc['rules']['rules'])} wc-inputs={wc_rows} "
           f"open={sum(len(g['items']) for g in doc['open']['groups'])} hitl-points={len(hitl['points'])} retention-rows={len(ret['rows'])}", file=sys.stderr)
 
 if __name__ == "__main__": main()
