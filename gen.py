@@ -70,12 +70,20 @@ def split_h(md, level):
 # ---------- Domains & Workflows ----------
 
 def applies(line):
-    """'Applies to' line -> ordered list of types it runs for."""
-    s = line
+    """'Applies to' line -> ordered list of types it runs for.
+
+    v6: the line is written in Work Classification field terms, with the employment types for
+    human readers in a trailing parenthetical, e.g. "(Travel, Local Long Term; not Perm, IRP)" or
+    "(all six types, IRP included)". The chips come from that parenthetical. A line with no
+    parenthetical falls back to the v5 reading of the whole line."""
+    m = [g for g in re.findall(r'\(([^()]*)\)', line)
+         if re.search(r'all six|all five|' + '|'.join(r'\b' + re.escape(t) + r'\b' for t in TYPES), g)]
+    s = m[-1] if m else line
     pos, neg = re.split(r'\bNot\b|\bnot\b', s, 1) if re.search(r'\bNot\b|\bnot\b', s) else (s, "")
-    if re.search(r'all six employment types', pos):
+    if re.search(r'\bonly\b', pos): pos = pos.split('only', 1)[0]   # "(Perm only)", "(IRP only: ...)"
+    if re.search(r'all six (employment )?types', pos):
         types = list(HELIX) + (["IRP"] if "IRP" in pos else [])
-    elif re.search(r'all five employment types', pos):
+    elif re.search(r'all five (employment )?types', pos):
         die(f"Applies to line still says five types (there are six): {line[:80]!r}")
     else:
         types = [t for t in TYPES if re.search(r'\b' + re.escape(t) + r'\b', pos)]
