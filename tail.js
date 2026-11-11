@@ -165,7 +165,7 @@ function renderRules() {
   const blocks = wc.map(b => b.p != null ? `<p>${md(b.p)}</p>`
     : `<div class="tblwrap wc"><table><thead><tr>${b.table.head.map(c => `<th>${md(c)}</th>`).join("")}</tr></thead><tbody>${b.table.rows.map(r => `<tr>${r.map(c => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("");
   return `<div class="dhead"><p class="eyebrow"><b>Rules</b><span>${RULES.length} rules, every workflow</span></p><h1>Rules that apply to every workflow</h1><p class="lead">${md(DOC.rules.lede)}</p></div>
-  <ol class="rules">${RULES.map(r => `<li><div><b>${md(r[0])}</b>${md(r[1])}</div></li>`).join("")}</ol>
+  <ol class="rules">${RULES.map(r => `<li><div><b>${md(r[0])}</b>${md(r[1])}${(r[2] && r[2].length) ? `<ul>${r[2].map(x => `<li>${md(x)}</li>`).join("")}</ul>` : ""}</div></li>`).join("")}</ol>
   ${wc.length ? `<h2 class="parth">Work Classification</h2><div class="prose">${blocks}</div>` : ""}`;
 }
 function renderOpen() {

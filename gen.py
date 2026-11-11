@@ -195,7 +195,10 @@ def parse_rules(body):
     lede, items = [], []
     for line in main.split("\n"):
         m = re.match(r'\d+\.\s+\*\*(.+?)\*\*\s*(.*)', line)
-        if m: items.append([clean(m.group(1)), clean(m.group(2))])
+        b = re.match(r'\s+[-*]\s+(.*)', line)
+        if m: items.append([clean(m.group(1)), clean(m.group(2)), []])
+        elif b and items: items[-1][2].append(clean(b.group(1)))   # v7: a rule's own sub-bullets
+        elif b: die(f"Rules: a bullet before the first numbered rule: {line.strip()[:60]!r}")
         elif line.strip(): lede.append(clean(line))
     wc = parse_blocks(wc_md)
     if sum(1 for b in wc if "table" in b) < 1: die("Work Classification: no inputs table")

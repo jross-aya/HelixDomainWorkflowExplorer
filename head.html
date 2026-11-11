@@ -237,6 +237,9 @@ ol.rules li{counter-increment:r;display:grid;grid-template-columns:52px minmax(0
 ol.rules li::before{content:counter(r,decimal-leading-zero);font:700 26px var(--display);letter-spacing:-.03em;line-height:1;padding-top:2px;background:linear-gradient(140deg,var(--coral),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
 ol.rules b{display:block;font:700 17px var(--display);letter-spacing:-.01em;margin-bottom:6px;color:var(--fg)}
 ol.rules li div{color:var(--muted)}
+ol.rules li ul{margin:10px 0 0;padding-left:18px;display:grid;gap:6px}
+ol.rules li ul li{display:list-item;padding:0;border:0;background:none;counter-increment:none;border-radius:0}
+ol.rules li ul li::before{content:none}
 
 /* Open items */
 .open h2{font:700 14px var(--display);letter-spacing:.01em;margin:28px 0 10px;display:flex;align-items:center;gap:10px}
