@@ -52,10 +52,6 @@ function renderHero() {
   document.getElementById("eyebrow").textContent = `Helix is Aya \u00b7 Regenerated ${DOC.built}`;  // v9: build stamp, not the Doc byline date
   document.getElementById("stats").innerHTML =
     `<span class="nums"><span><b>${DOMAINS.length}</b>domains</span><span><b>${WF.length}</b>workflows</span><span><b>${RECORDS.length}</b>records</span><span><b>${EVENTS.size}</b>named events</span><span><b>${HITL.points.filter(p => p[1] && !/^None expected/.test(p[1])).length}</b>human points</span></span>`;
-  // v9: remember whether the viewer collapsed the flow strip (per browser; storage may be unavailable)
-  const fw = document.getElementById("flowwrap");
-  try { if (localStorage.getItem("helix.flow") === "closed") fw.open = false; } catch (e) {}
-  fw.addEventListener("toggle", () => { try { localStorage.setItem("helix.flow", fw.open ? "open" : "closed"); } catch (e) {} });
   document.getElementById("flow").innerHTML = STAGES.map(s => `<div class="stg ${s.id}" style="--sc:${s.sc}"><h2>${esc(s.name)}</h2>${
     s.ids.map(id => { const d = DOMAINS.find(x => x.id === id); if (!d) return "";
       const on = state.view === "domains" && state.domain === d.id && !state.q;
@@ -251,6 +247,13 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.classList.contains("ev")) e.target.click(); });
 document.getElementById("q").addEventListener("input", e => { state.q = e.target.value.trim(); render(); });
 window.addEventListener("hashchange", route);
+// v9: remember whether the viewer collapsed the flow strip (per browser; storage may be unavailable).
+// Set up once at load, not in renderHero, which runs on every render.
+(() => {
+  const fw = document.getElementById("flowwrap");
+  try { if (localStorage.getItem("helix.flow") === "closed") fw.open = false; } catch (e) {}
+  fw.addEventListener("toggle", () => { try { localStorage.setItem("helix.flow", fw.open ? "open" : "closed"); } catch (e) {} });
+})();
 route();
 </script>
 </body>

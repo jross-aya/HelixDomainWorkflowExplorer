@@ -242,7 +242,11 @@ def parse_doc(md):
     open_ = parse_open(secs.pop("Still open"))
     domains = [parse_domain(t, secs[t]) for t in order if t in secs]
     import datetime, zoneinfo  # v9: stamp the regeneration date so the page's "Regenerated" never lags the Docs
-    built = datetime.datetime.now(zoneinfo.ZoneInfo("America/Los_Angeles")).strftime("%b %-d, %Y, %-I:%M %p PT")
+    try: tz = zoneinfo.ZoneInfo("America/Los_Angeles")
+    except zoneinfo.ZoneInfoNotFoundError: die("no time zone data for America/Los_Angeles; on Windows run: pip install tzdata")
+    now = datetime.datetime.now(tz)
+    # built by hand, not with %-d / %-I, which Windows strftime rejects
+    built = f"{now:%b} {now.day}, {now.year}, {now.hour % 12 or 12}:{now:%M %p} PT"
     return {"title": title, "byline": byline, "asof": asof, "built": built, "how": clean(how), "rules": rules, "open": open_, "domains": domains}
 
 # ---------- Human-in-the-Loop Map ----------
