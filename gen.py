@@ -241,7 +241,9 @@ def parse_doc(md):
     rules = parse_rules(secs.pop("Rules that apply to every workflow"))
     open_ = parse_open(secs.pop("Still open"))
     domains = [parse_domain(t, secs[t]) for t in order if t in secs]
-    return {"title": title, "byline": byline, "asof": asof, "how": clean(how), "rules": rules, "open": open_, "domains": domains}
+    import datetime, zoneinfo  # v9: stamp the regeneration date so the page's "Regenerated" never lags the Docs
+    built = datetime.datetime.now(zoneinfo.ZoneInfo("America/Los_Angeles")).strftime("%b %-d, %Y, %-I:%M %p PT")
+    return {"title": title, "byline": byline, "asof": asof, "built": built, "how": clean(how), "rules": rules, "open": open_, "domains": domains}
 
 # ---------- Human-in-the-Loop Map ----------
 

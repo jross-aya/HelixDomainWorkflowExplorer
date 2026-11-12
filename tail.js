@@ -49,9 +49,13 @@ const plus = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 const EVENTS = new Set(); WF.forEach(w => w.emits.forEach(e => EVENTS.add(e)));
 
 function renderHero() {
-  document.getElementById("eyebrow").textContent = `Helix is Aya \u00b7 Last updated ${DOC.byline.split(" \u00b7 ")[0]}`;
+  document.getElementById("eyebrow").textContent = `Helix is Aya \u00b7 Regenerated ${DOC.built}`;  // v9: build stamp, not the Doc byline date
   document.getElementById("stats").innerHTML =
     `<span class="nums"><span><b>${DOMAINS.length}</b>domains</span><span><b>${WF.length}</b>workflows</span><span><b>${RECORDS.length}</b>records</span><span><b>${EVENTS.size}</b>named events</span><span><b>${HITL.points.filter(p => p[1] && !/^None expected/.test(p[1])).length}</b>human points</span></span>`;
+  // v9: remember whether the viewer collapsed the flow strip (per browser; storage may be unavailable)
+  const fw = document.getElementById("flowwrap");
+  try { if (localStorage.getItem("helix.flow") === "closed") fw.open = false; } catch (e) {}
+  fw.addEventListener("toggle", () => { try { localStorage.setItem("helix.flow", fw.open ? "open" : "closed"); } catch (e) {} });
   document.getElementById("flow").innerHTML = STAGES.map(s => `<div class="stg ${s.id}" style="--sc:${s.sc}"><h2>${esc(s.name)}</h2>${
     s.ids.map(id => { const d = DOMAINS.find(x => x.id === id); if (!d) return "";
       const on = state.view === "domains" && state.domain === d.id && !state.q;

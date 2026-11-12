@@ -1,4 +1,4 @@
-# Explorer generator (v8, November 12, 2026)
+# Explorer generator (v9, November 12, 2026)
 
 Builds the Explorer page from the three master Docs. Nothing on the page is typed by hand.
 
@@ -31,3 +31,7 @@ v6: Applies-to lines are written in Work Classification field terms (engagement 
 v7: a numbered rule may carry its own indented sub-bullets ("   - ..."); they attach to the rule above and render as a list inside its card (a bullet before the first rule stops the run). Before v7 those lines were swept into the lead paragraph.
 
 v8: the Rules view's "### Assumptions" section is optional. The Doc dropped it on November 12, 2026 (decisions and their dates live only in the Decisions Log); when it is absent the page renders no Assumptions heading. A present section is parsed as before.
+
+v9: gen.py stamps the regeneration date and time (Pacific, 12-hour clock) into the page as `built`, and the hero eyebrow shows "Regenerated <stamp>" instead of the master Doc's byline date, which only changed when someone edited the Doc by hand. The hero lede in head.html (hand-written scope text, the one hand-typed paragraph on the page) now states the Helix-as-Aya operating model and the employment types scoped in and out; re-check it whenever the Doc's "How to read this" section changes.
+
+v9 (same release): the hero's domains-by-stage strip (the flow grid under the counts) is a collapsible section, open by default; the viewer's open/closed choice is kept in localStorage per browser.

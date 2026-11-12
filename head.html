@@ -85,7 +85,15 @@ nav.views button[aria-current="page"]{background:var(--violet);border-color:var(
 .stats .nums>span{display:inline-flex;align-items:baseline;gap:8px;white-space:nowrap}
 .stats b{font:700 20px var(--display);color:var(--fg);letter-spacing:-.02em}
 
-.flow{margin:34px 0 10px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative}
+/* v9: the flow strip collapses; the viewer's choice is remembered per browser */
+.flowwrap{margin:26px 0 10px}
+.flowwrap summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;font:600 13px var(--display);color:var(--fg);padding:6px 0;user-select:none}
+.flowwrap summary::-webkit-details-marker{display:none}
+.flowwrap summary::before{content:"";width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .18s;margin-left:2px}
+.flowwrap[open] summary::before{transform:rotate(45deg)}
+.flowwrap summary small{font:400 11px var(--mono);color:var(--muted);letter-spacing:.06em}
+.flowwrap summary:hover{color:var(--fg)}
+.flow{margin:14px 0 10px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative}
 .flow::before{content:"";position:absolute;left:0;right:0;top:34px;height:2px;background:linear-gradient(90deg,var(--muted) 0,var(--amber) 22%,var(--coral) 44%,var(--violet) 66%,var(--aqua) 100%);opacity:.5;border-radius:2px}
 .flow .stg{display:grid;gap:8px;align-content:start;min-width:0}
 .flow .stg h2{font:600 13px var(--display);letter-spacing:.01em;color:var(--fg);padding:0 2px 16px;display:flex;align-items:center;gap:8px}
@@ -290,10 +298,13 @@ ol.rules li ul li::before{content:none}
   <div class="hero-head">
     <p class="k" id="eyebrow">Helix is Aya · Last updated November 4, 2026</p>
     <h1><span class="line">What Helix does,</span><span class="line grad">and which domain owns it.</span></h1>
-    <p class="lede" id="lede"><b>Aya employment types covered:</b> Travel, Per Diem, WFD, Locums, Perm, and Local Long Term. IRP is Per Diem × client-employed; its records are built now, its workflows later. Interim Leadership, Education, and Government are not unique employment types in Helix: they map to Travel with different work settings. <b>Not scoped:</b> Access Control; small enough to leave out for now.</p>
+    <p class="lede" id="lede"><b>Helix is Aya.</b> Helix is its own platform beside Aya’s systems (CoreAPI, Nova), but it operates as Aya: Aya stays the employer of record, holds the client contracts, bills clients, and pays talent, so a Helix placement looks like any other Aya placement to a client or a clinician. Helix reaches Aya’s systems only through Integration Hub, and is expected to replace them over time, not soon. <b>Scoped in:</b> Travel, Per Diem, WFD, Locums, Perm, and Local Long Term; IRP is Per Diem × client-employed. Interim Leadership and Education map to Travel (Education is the School work setting); Government is a client sector on the worksite, not a type. <b>Scoped out for now:</b> Access Control.</p>
     <div class="stats" id="stats"></div>
   </div>
-  <div class="flow" id="flow"></div>
+  <details class="flowwrap" id="flowwrap" open>
+    <summary><span>Domains by stage</span><small>click a domain to open it</small></summary>
+    <div class="flow" id="flow"></div>
+  </details>
 </section>
 <main>
   <aside class="rail" id="spine"></aside>
