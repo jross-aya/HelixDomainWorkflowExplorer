@@ -177,7 +177,7 @@ function renderOpen() {
 function renderAbout() {
   return `<div class="dhead"><p class="eyebrow"><b>About</b><span>${esc(DOC.byline)}</span></p><h1>${tq(DOC.title)}</h1><p class="lead">${md(DOC.asof)}</p></div>
   <h2 class="parth">How to read this</h2><div class="prose">${mdBlocks(DOC.how)}</div>
-  <h2 class="parth">${tq(DOC.rules.assumptionsTitle)}</h2><div class="prose"><ul>${DOC.rules.assumptions.map(a => `<li>${md(a)}</li>`).join("")}</ul></div>
+  ${DOC.rules.assumptions.length ? `<h2 class="parth">${tq(DOC.rules.assumptionsTitle)}</h2><div class="prose"><ul>${DOC.rules.assumptions.map(a => `<li>${md(a)}</li>`).join("")}</ul></div>` : ""}
   <h2 class="docsh">Master docs</h2><div class="docs">${DOCS.map(x => `<a href="${esc(x[1])}" target="_blank" rel="noopener">${tq(x[0])}<small>Claude Doc</small></a>`).join("")}</div>`;
 }
 

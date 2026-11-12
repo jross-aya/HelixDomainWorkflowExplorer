@@ -202,15 +202,16 @@ def parse_rules(body):
         elif line.strip(): lede.append(clean(line))
     wc = parse_blocks(wc_md)
     if sum(1 for b in wc if "table" in b) < 1: die("Work Classification: no inputs table")
-    recs_md, _, assumptions = rest.partition("\n### Assumptions")
-    if not assumptions: die("Rules: no 'Assumptions' section")
+    recs_md, _, assumptions = rest.partition("\n### Assumptions")   # v8: optional; the Doc dropped it November 12, 2026
     rec_lede = [clean(l) for l in recs_md.split("\n") if l.strip() and not l.startswith("|")]
     hdr, records = md_table(recs_md.split("\n"), 4)
     if hdr[2] != "Created by": die(f"Records table: third column must be 'Created by', got {hdr[2]!r}")
-    assum_title, _, assum_body = assumptions.partition("\n")
-    assum = [clean(l[2:]) for l in assum_body.split("\n") if l.startswith("- ")]
-    stray = [l for l in assum_body.split("\n") if l.strip() and not l.startswith("- ")]
-    if stray: die(f"Assumptions: non-list text {stray[0][:60]!r}")
+    assum_title, assum = "", []
+    if assumptions:
+        assum_title, _, assum_body = assumptions.partition("\n")
+        assum = [clean(l[2:]) for l in assum_body.split("\n") if l.startswith("- ")]
+        stray = [l for l in assum_body.split("\n") if l.strip() and not l.startswith("- ")]
+        if stray: die(f"Assumptions: non-list text {stray[0][:60]!r}")
     return {"lede": " ".join(lede), "rules": items, "workClassification": wc, "recordsLede": " ".join(rec_lede), "records": records,
             "assumptionsTitle": clean(assum_title), "assumptions": assum}
 
