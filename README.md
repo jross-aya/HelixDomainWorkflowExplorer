@@ -1,4 +1,4 @@
-# Explorer generator (v9, November 12, 2026)
+# Explorer generator (v12, November 13, 2026)
 
 Builds the Explorer page from the three master Docs. Nothing on the page is typed by hand.
 
@@ -37,3 +37,7 @@ v9: gen.py stamps the regeneration date and time (Pacific, 12-hour clock) into t
 v9 (same release): the hero's domains-by-stage strip (the flow grid under the counts) is a collapsible section, open by default; the viewer's open/closed choice is kept in localStorage per browser.
 
 v10: the master Doc may carry a "## Not modeled" section (a lede, a four-column table of Area, What it is, Why it is not modeled, What brings it in, and an optional footer). gen.py parses it into DOC.notModeled and the page shows it as a "Not modeled" view beside Open items. The section is optional; a Doc without it still builds.
+
+v11: the Open items view is removed. Open items live only in the Decisions Log, as numbered entries (DL-nnn) with owner, due date and status, where the resolution, who decided it and when are recorded on the same entry. gen.py stops if the master Doc still carries a "## Still open" section; DOC.open no longer exists and tail.js has no renderOpen. 
+
+v12: the Human-in-the-Loop Map's "## Open" section and the Retention Table's "## Still open" section are removed; their items are DL entries in the Decisions Log. gen.py stops if either section comes back; HITL.open and RETENTION.open no longer exist and their views render no open list.

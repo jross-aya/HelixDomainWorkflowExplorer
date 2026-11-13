@@ -42,7 +42,7 @@ function mdBlocks(text) {
 const DOMAINS = DOC.domains.slice().sort((a,b)=>({Platform:0,Foundation:1}[a.kind]??2)-({Platform:0,Foundation:1}[b.kind]??2));
 const WF = []; DOMAINS.forEach(d => d.workflows.forEach(w => { w.slug = slug(w.name); w.domain = d; WF.push(w); }));
 const RECORDS = DOC.rules.records, RULES = DOC.rules.rules;
-const VIEWS = { domains: 1, records: 1, rules: 1, humans: 1, retention: 1, open: 1, notmodeled: 1, about: 1 };  // v10: Not modeled view
+const VIEWS = { domains: 1, records: 1, rules: 1, humans: 1, retention: 1, notmodeled: 1, about: 1 };  // v11: Open items view removed; open items live only in the Decisions Log
 let state = { view: "domains", domain: DOMAINS[0].id, wf: null, q: "", event: null };
 const layerTag = d => { const m = /Layer (\d+)/.exec(d.layer); return m ? "L" + m[1] : "PL"; };
 const plus = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
@@ -168,12 +168,6 @@ function renderRules() {
   <ol class="rules">${RULES.map(r => `<li><div><b>${md(r[0])}</b>${md(r[1])}${(r[2] && r[2].length) ? `<ul>${r[2].map(x => `<li>${md(x)}</li>`).join("")}</ul>` : ""}</div></li>`).join("")}</ol>
   ${wc.length ? `<h2 class="parth">Work Classification</h2><div class="prose">${blocks}</div>` : ""}`;
 }
-function renderOpen() {
-  const o = DOC.open; const groups = o.groups.slice().reverse();
-  return `<div class="open"><div class="dhead"><p class="eyebrow"><b>Open items</b><span>${groups.find(g=>!g.done)?.items.length ?? 0} open</span></p><h1>Still open</h1><p class="lead">${md(o.lede)}</p></div>
-  ${groups.map(g => `<h2>${esc(g.title)}</h2><ul>${g.items.map(x => `<li class="${g.done ? "done" : ""}">${md(x)}</li>`).join("")}</ul>`).join("")}
-  ${o.footer ? `<p class="lead" style="margin-top:26px;font-size:14.5px">${md(o.footer)}</p>` : ""}</div>`;
-}
 function renderNotModeled() {  // v10: the master Doc's "Not modeled" section, one row per area Helix has not scoped
   const n = DOC.notModeled;
   return `<div class="dhead"><p class="eyebrow"><b>Not modeled</b><span>${n.rows.length} areas not yet scoped</span></p><h1>Not modeled</h1><p class="lead">${md(n.lede)}</p></div>
@@ -199,7 +193,6 @@ function renderHumans() {
   <h2 class="parth">Design rule</h2><div class="prose">${mdBlocks(HITL.rule)}</div>
   <h2 class="parth">Roles</h2><div class="tblwrap"><table><thead><tr><th>Role</th><th>Owns</th></tr></thead><tbody>${HITL.roles.map(r => `<tr><td>${md(r[0])}</td><td>${md(r[1])}</td></tr>`).join("")}</tbody></table></div>
   <h2 class="parth">Human points by workflow</h2><div class="tblwrap hp"><table><thead><tr><th>Workflow</th><th>Human point</th><th>Reason</th><th>Role</th></tr></thead><tbody>${HITL.points.map(p => { const w = wfFor(p[0]); const nm = w ? `<a href="#${w.slug}">${tq(p[0])}</a>` : tq(p[0]); return `<tr><td>${nm}</td><td>${md(p[1])}</td><td>${reasonChips(p[2])}</td><td>${md(p[3])}</td></tr>`; }).join("")}</tbody></table></div>
-  <h2 class="parth">Open</h2><div class="prose"><ul>${HITL.open.map(x => `<li>${md(x)}</li>`).join("")}</ul></div>
   <h2 class="docsh">Master doc</h2><div class="docs"><a href="${esc(DOCS[2][1])}" target="_blank" rel="noopener">${tq(DOCS[2][0])}<small>Claude Doc</small></a></div>`;
 }
 function renderRetention() {
@@ -207,7 +200,6 @@ function renderRetention() {
   <h2 class="parth">Two corrections to common assumptions</h2><div class="prose"><ul>${RETENTION.corrections.map(x => `<li>${md(x)}</li>`).join("")}</ul></div>
   <h2 class="parth">Retention by record</h2><div class="tblwrap ret"><table><thead><tr><th>Record</th><th>Owning domain</th><th>Keep for</th><th>Clock starts</th><th>Forced by</th><th>On deletion request</th></tr></thead><tbody>${RETENTION.rows.map(r => `<tr><td>${md(r[0])}</td><td>${r[1].split(", ").map(o => ownerChip(o)).join(" ")}</td><td>${md(r[2])}</td><td>${md(r[3])}</td><td>${md(r[4])}</td><td>${md(r[5])}</td></tr>`).join("")}</tbody></table></div>
   <h2 class="parth">What this forces on the design</h2><div class="prose"><ul>${RETENTION.forces.map(x => `<li>${md(x)}</li>`).join("")}</ul></div>
-  <h2 class="parth">Still open</h2><div class="prose"><ul>${RETENTION.open.map(x => `<li>${md(x)}</li>`).join("")}</ul></div>
   <h2 class="parth">Sources checked</h2><div class="prose"><ul>${RETENTION.sources.map(x => `<li>${md(x)}</li>`).join("")}</ul></div>
   <h2 class="docsh">Master doc</h2><div class="docs"><a href="${esc(DOCS[3][1])}" target="_blank" rel="noopener">${tq(DOCS[3][0])}<small>Claude Doc</small></a></div>`;
 }
@@ -238,7 +230,6 @@ function render() {
   else if (state.view === "rules") c.innerHTML = renderRules();
   else if (state.view === "humans") c.innerHTML = renderHumans();
   else if (state.view === "retention") c.innerHTML = renderRetention();
-  else if (state.view === "open") c.innerHTML = renderOpen();
   else if (state.view === "notmodeled") c.innerHTML = renderNotModeled();
   else if (state.view === "about") c.innerHTML = renderAbout();
   else c.innerHTML = renderDomains() + `<h2 class="docsh">Master docs</h2><p class="asof">${esc(DOC.asof)}</p><div class="docs">${DOCS.map(x => `<a href="${esc(x[1])}" target="_blank" rel="noopener">${tq(x[0])}<small>Claude Doc</small></a>`).join("")}</div>`;

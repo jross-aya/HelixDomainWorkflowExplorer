@@ -249,14 +249,6 @@ ol.rules li ul{margin:10px 0 0;padding-left:18px;display:grid;gap:6px}
 ol.rules li ul li{display:list-item;padding:0;border:0;background:none;counter-increment:none;border-radius:0}
 ol.rules li ul li::before{content:none}
 
-/* Open items */
-.open h2{font:700 14px var(--display);letter-spacing:.01em;margin:28px 0 10px;display:flex;align-items:center;gap:10px}
-.open h2::after{content:"";flex:1;height:1px;background:var(--line)}
-.open ul{padding:0;margin:0;list-style:none;max-width:80ch;display:grid;gap:8px}
-.open li{padding-left:22px;position:relative;color:var(--muted)}
-.open li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:9px;border-radius:2px;transform:rotate(45deg);border:1.5px solid var(--amber)}
-.open li.done{color:var(--muted);opacity:.8}
-.open li.done::before{background:var(--aqua);border-color:var(--aqua)}
 .rsn{display:inline-block;padding:2px 9px;border-radius:999px;font:600 12px var(--mono);letter-spacing:.02em;border:1px solid var(--line);color:var(--fg);background:var(--bg3);margin:0 4px 4px 0;white-space:nowrap}
 .rsn[data-r="Law"]{border-color:var(--coral);color:var(--coral)}
 .rsn[data-r="Authority"]{border-color:var(--violet);color:var(--violet)}
@@ -288,7 +280,6 @@ ol.rules li ul li::before{content:none}
     <button data-view="rules">Rules</button>
     <button data-view="humans">Humans</button>
     <button data-view="retention">Retention</button>
-    <button data-view="open">Open items</button>
     <button data-view="notmodeled">Not modeled</button>
     <button data-view="about">About</button>
   </nav>

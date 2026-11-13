@@ -215,23 +215,6 @@ def parse_rules(body):
     return {"lede": " ".join(lede), "rules": items, "workClassification": wc, "recordsLede": " ".join(rec_lede), "records": records,
             "assumptionsTitle": clean(assum_title), "assumptions": assum}
 
-def parse_open(body):
-    out = {"lede": "", "groups": [], "footer": ""}
-    cur = None
-    for line in body.split("\n"):
-        if not line.strip(): continue
-        if re.match(r'^(Decided .*|Still open):$', line):
-            cur = {"title": line.rstrip(":"), "items": [], "done": not line.startswith("Still")}; out["groups"].append(cur)
-        elif line.startswith("- [x] ") or line.startswith("- [ ] "):
-            if cur is None:
-                cur = {"title": "Still open", "items": [], "done": False}; out["groups"].append(cur)
-            cur["items"].append(clean(line[6:]))
-        elif cur is None: out["lede"] += clean(line) + " "
-        else: out["footer"] += clean(line) + " "
-    out["lede"] = out["lede"].strip(); out["footer"] = out["footer"].strip()
-    if not out["groups"]: die("Still open: no items")
-    return out
-
 def parse_doc(md):
     secs, order = split_h(md, 2)
     head_lines = [l for l in secs.pop("_head").split("\n") if l.strip()]
@@ -239,7 +222,7 @@ def parse_doc(md):
     byline = clean(head_lines[1]); asof = clean(" ".join(head_lines[2:]))
     how = secs.pop("How to read this")
     rules = parse_rules(secs.pop("Rules that apply to every workflow"))
-    open_ = parse_open(secs.pop("Still open"))
+    if "Still open" in secs: die('"Still open" section: open items live only in the Decisions Log (v11); remove the section from the Doc')  # v11
     not_modeled = parse_not_modeled(secs.pop("Not modeled")) if "Not modeled" in secs else {"lede": "", "rows": [], "footer": ""}  # v10
     domains = [parse_domain(t, secs[t]) for t in order if t in secs]
     import datetime, zoneinfo  # v9: stamp the regeneration date so the page's "Regenerated" never lags the Docs
@@ -248,7 +231,7 @@ def parse_doc(md):
     now = datetime.datetime.now(tz)
     # built by hand, not with %-d / %-I, which Windows strftime rejects
     built = f"{now:%b} {now.day}, {now.year}, {now.hour % 12 or 12}:{now:%M %p} PT"
-    return {"title": title, "byline": byline, "asof": asof, "built": built, "how": clean(how), "rules": rules, "open": open_, "notModeled": not_modeled, "domains": domains}
+    return {"title": title, "byline": byline, "asof": asof, "built": built, "how": clean(how), "rules": rules, "notModeled": not_modeled, "domains": domains}
 
 def parse_not_modeled(body):
     """v10: the master Doc's optional "## Not modeled" section: a lede, one 4-column table
@@ -288,9 +271,9 @@ def parse_hitl(md):
     rule = clean(secs.pop("Design rule"))
     _, roles = md_table(secs.pop("Roles").split("\n"), 2)
     _, points = md_table(secs.pop("Human points by workflow").split("\n"), 4)
-    open_ = [clean(l[2:]) for l in secs.pop("Open").split("\n") if l.startswith("- ")]
+    if "Open" in secs: die('HITL "Open" section: open items live only in the Decisions Log (v12); remove the section from the Doc')  # v12
     if secs: die(f"HITL: unknown sections {list(secs)}")
-    return {"lede": lede, "reasonsTitle": reasons_title, "reasons": reasons, "rule": rule, "roles": roles, "points": points, "open": open_}
+    return {"lede": lede, "reasonsTitle": reasons_title, "reasons": reasons, "rule": rule, "roles": roles, "points": points}
 
 # ---------- Record Retention Table ----------
 
@@ -302,10 +285,10 @@ def parse_retention(md):
     corrections = bullets("Two corrections to common assumptions")
     _, rows = md_table(secs.pop("Retention by record").split("\n"), 6)
     forces = bullets("What this forces on the design")
-    open_ = bullets("Still open")
+    if "Still open" in secs: die('Retention "Still open" section: open items live only in the Decisions Log (v12); remove the section from the Doc')  # v12
     sources = bullets("Sources checked")
     if secs: die(f"Retention: unknown sections {list(secs)}")
-    return {"lede": lede, "corrections": corrections, "rows": rows, "forces": forces, "open": open_, "sources": sources}
+    return {"lede": lede, "corrections": corrections, "rows": rows, "forces": forces, "sources": sources}
 
 # ---------- main ----------
 
@@ -327,6 +310,6 @@ def main():
     n = sum(len(d["workflows"]) for d in doc["domains"])
     wc_rows = next(len(b["table"]["rows"]) for b in doc["rules"]["workClassification"] if "table" in b)  # first table; parse_rules guarantees one
     print(f"domains={len(doc['domains'])} workflows={n} records={len(doc['rules']['records'])} rules={len(doc['rules']['rules'])} wc-inputs={wc_rows} "
-          f"open={sum(len(g['items']) for g in doc['open']['groups'])} hitl-points={len(hitl['points'])} retention-rows={len(ret['rows'])} not-modeled={len(doc['notModeled']['rows'])}", file=sys.stderr)
+          f"hitl-points={len(hitl['points'])} retention-rows={len(ret['rows'])} not-modeled={len(doc['notModeled']['rows'])}", file=sys.stderr)
 
 if __name__ == "__main__": main()
