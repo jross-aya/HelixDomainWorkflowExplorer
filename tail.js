@@ -42,7 +42,7 @@ function mdBlocks(text) {
 const DOMAINS = DOC.domains.slice().sort((a,b)=>({Platform:0,Foundation:1}[a.kind]??2)-({Platform:0,Foundation:1}[b.kind]??2));
 const WF = []; DOMAINS.forEach(d => d.workflows.forEach(w => { w.slug = slug(w.name); w.domain = d; WF.push(w); }));
 const RECORDS = DOC.rules.records, RULES = DOC.rules.rules;
-const VIEWS = { domains: 1, records: 1, rules: 1, humans: 1, retention: 1, open: 1, about: 1 };
+const VIEWS = { domains: 1, records: 1, rules: 1, humans: 1, retention: 1, open: 1, notmodeled: 1, about: 1 };  // v10: Not modeled view
 let state = { view: "domains", domain: DOMAINS[0].id, wf: null, q: "", event: null };
 const layerTag = d => { const m = /Layer (\d+)/.exec(d.layer); return m ? "L" + m[1] : "PL"; };
 const plus = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
@@ -174,6 +174,13 @@ function renderOpen() {
   ${groups.map(g => `<h2>${esc(g.title)}</h2><ul>${g.items.map(x => `<li class="${g.done ? "done" : ""}">${md(x)}</li>`).join("")}</ul>`).join("")}
   ${o.footer ? `<p class="lead" style="margin-top:26px;font-size:14.5px">${md(o.footer)}</p>` : ""}</div>`;
 }
+function renderNotModeled() {  // v10: the master Doc's "Not modeled" section, one row per area Helix has not scoped
+  const n = DOC.notModeled;
+  return `<div class="dhead"><p class="eyebrow"><b>Not modeled</b><span>${n.rows.length} areas not yet scoped</span></p><h1>Not modeled</h1><p class="lead">${md(n.lede)}</p></div>
+  <div class="tblwrap ret"><table><thead><tr><th>Area</th><th>What it is</th><th>Why it is not modeled</th><th>What brings it in</th></tr></thead><tbody>${n.rows.map(r => `<tr><td>${md(r[0])}</td><td>${md(r[1])}</td><td>${md(r[2])}</td><td>${md(r[3])}</td></tr>`).join("")}</tbody></table></div>
+  ${n.footer ? `<p class="lead" style="margin-top:26px;font-size:14.5px">${md(n.footer)}</p>` : ""}
+  <h2 class="docsh">Master docs</h2><div class="docs">${DOCS.slice(0, 2).map(x => `<a href="${esc(x[1])}" target="_blank" rel="noopener">${tq(x[0])}<small>Claude Doc</small></a>`).join("")}</div>`;
+}
 function renderAbout() {
   return `<div class="dhead"><p class="eyebrow"><b>About</b><span>${esc(DOC.byline)}</span></p><h1>${tq(DOC.title)}</h1><p class="lead">${md(DOC.asof)}</p></div>
   <h2 class="parth">How to read this</h2><div class="prose">${mdBlocks(DOC.how)}</div>
@@ -232,6 +239,7 @@ function render() {
   else if (state.view === "humans") c.innerHTML = renderHumans();
   else if (state.view === "retention") c.innerHTML = renderRetention();
   else if (state.view === "open") c.innerHTML = renderOpen();
+  else if (state.view === "notmodeled") c.innerHTML = renderNotModeled();
   else if (state.view === "about") c.innerHTML = renderAbout();
   else c.innerHTML = renderDomains() + `<h2 class="docsh">Master docs</h2><p class="asof">${esc(DOC.asof)}</p><div class="docs">${DOCS.map(x => `<a href="${esc(x[1])}" target="_blank" rel="noopener">${tq(x[0])}<small>Claude Doc</small></a>`).join("")}</div>`;
   if (state.wf && !state.q) { const el = document.getElementById("wf-" + state.wf); if (el) el.scrollIntoView({ block: "start" }); }

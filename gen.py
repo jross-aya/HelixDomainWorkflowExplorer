@@ -240,6 +240,7 @@ def parse_doc(md):
     how = secs.pop("How to read this")
     rules = parse_rules(secs.pop("Rules that apply to every workflow"))
     open_ = parse_open(secs.pop("Still open"))
+    not_modeled = parse_not_modeled(secs.pop("Not modeled")) if "Not modeled" in secs else {"lede": "", "rows": [], "footer": ""}  # v10
     domains = [parse_domain(t, secs[t]) for t in order if t in secs]
     import datetime, zoneinfo  # v9: stamp the regeneration date so the page's "Regenerated" never lags the Docs
     try: tz = zoneinfo.ZoneInfo("America/Los_Angeles")
@@ -247,7 +248,20 @@ def parse_doc(md):
     now = datetime.datetime.now(tz)
     # built by hand, not with %-d / %-I, which Windows strftime rejects
     built = f"{now:%b} {now.day}, {now.year}, {now.hour % 12 or 12}:{now:%M %p} PT"
-    return {"title": title, "byline": byline, "asof": asof, "built": built, "how": clean(how), "rules": rules, "open": open_, "domains": domains}
+    return {"title": title, "byline": byline, "asof": asof, "built": built, "how": clean(how), "rules": rules, "open": open_, "notModeled": not_modeled, "domains": domains}
+
+def parse_not_modeled(body):
+    """v10: the master Doc's optional "## Not modeled" section: a lede, one 4-column table
+    (Area, What it is, Why it is not modeled, What brings it in), and an optional footer."""
+    lines = body.split("\n")
+    tbl = [l for l in lines if l.startswith("|")]
+    if not tbl: die("Not modeled: no table")
+    first = next(i for i, l in enumerate(lines) if l.startswith("|"))
+    last = max(i for i, l in enumerate(lines) if l.startswith("|"))
+    lede = " ".join(clean(l) for l in lines[:first] if l.strip())
+    footer = " ".join(clean(l) for l in lines[last + 1:] if l.strip())
+    _, rows = md_table(tbl, 4)
+    return {"lede": lede, "rows": rows, "footer": footer}
 
 # ---------- Human-in-the-Loop Map ----------
 
@@ -313,6 +327,6 @@ def main():
     n = sum(len(d["workflows"]) for d in doc["domains"])
     wc_rows = next(len(b["table"]["rows"]) for b in doc["rules"]["workClassification"] if "table" in b)  # first table; parse_rules guarantees one
     print(f"domains={len(doc['domains'])} workflows={n} records={len(doc['rules']['records'])} rules={len(doc['rules']['rules'])} wc-inputs={wc_rows} "
-          f"open={sum(len(g['items']) for g in doc['open']['groups'])} hitl-points={len(hitl['points'])} retention-rows={len(ret['rows'])}", file=sys.stderr)
+          f"open={sum(len(g['items']) for g in doc['open']['groups'])} hitl-points={len(hitl['points'])} retention-rows={len(ret['rows'])} not-modeled={len(doc['notModeled']['rows'])}", file=sys.stderr)
 
 if __name__ == "__main__": main()

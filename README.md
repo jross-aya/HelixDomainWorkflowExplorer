@@ -35,3 +35,5 @@ v8: the Rules view's "### Assumptions" section is optional. The Doc dropped it o
 v9: gen.py stamps the regeneration date and time (Pacific, 12-hour clock) into the page as `built`, and the hero eyebrow shows "Regenerated <stamp>" instead of the master Doc's byline date, which only changed when someone edited the Doc by hand. The hero lede in head.html (hand-written scope text, the one hand-typed paragraph on the page) now states the Helix-as-Aya operating model and the employment types scoped in and out; re-check it whenever the Doc's "How to read this" section changes.
 
 v9 (same release): the hero's domains-by-stage strip (the flow grid under the counts) is a collapsible section, open by default; the viewer's open/closed choice is kept in localStorage per browser.
+
+v10: the master Doc may carry a "## Not modeled" section (a lede, a four-column table of Area, What it is, Why it is not modeled, What brings it in, and an optional footer). gen.py parses it into DOC.notModeled and the page shows it as a "Not modeled" view beside Open items. The section is optional; a Doc without it still builds.
