@@ -180,7 +180,14 @@ function transCell(v, kind) {  // v14: one cell of a transitions table
   if (kind === "from" || kind === "to") return `<span class="st">${md(v)}</span>`;
   if (kind === "owner") { const w = WF.find(w => w.name === v); return w ? `<a class="creator" href="#${w.slug}">${tq(v)}</a>` : tq(v); }
   if (kind === "events") {  // comma list outside parentheses; Capitalized items are event names, lower-case items are sources
-    return v.split(/,\s*(?![^()]*\))/).map(x => x.trim()).filter(Boolean).map(x => /^[A-Z]/.test(x) ? `<span class="ev">${md(x)}</span>` : `<span class="src">${md(x)}</span>`).join("");
+    // Event chips here use .tev, not .ev: the page-wide .ev click handler opens the Domains view's event panel,
+    // which the Records view does not have. A .tev chip links to the workflow that emits the event instead.
+    return v.split(/,\s*(?![^()]*\))/).map(x => x.trim()).filter(Boolean).map(x => {
+      if (!/^[A-Z]/.test(x)) return `<span class="src">${md(x)}</span>`;
+      const base = x.replace(/\s*\([^()]*\)\s*$/, "");
+      const w = WF.find(w => w.emits.some(e => e.replace(/\s*\([^()]*\)\s*$/, "") === base));
+      return w ? `<a class="tev" href="#${w.slug}" title="Emitted by ${esc(w.name)}">${md(x)}</a>` : `<span class="tev">${md(x)}</span>`;
+    }).join("");
   }
   return md(v);
 }
