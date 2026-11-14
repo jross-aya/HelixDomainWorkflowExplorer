@@ -203,9 +203,11 @@ def parse_rules(body):
     wc = parse_blocks(wc_md)
     if sum(1 for b in wc if "table" in b) < 1: die("Work Classification: no inputs table")
     recs_md, _, assumptions = rest.partition("\n### Assumptions")   # v8: optional; the Doc dropped it November 12, 2026
+    recs_md, _, trans_md = recs_md.partition("\n### Record transitions")   # v14: optional until the first table lands
     rec_lede = [clean(l) for l in recs_md.split("\n") if l.strip() and not l.startswith("|")]
     hdr, records = md_table(recs_md.split("\n"), 4)
     if hdr[2] != "Created by": die(f"Records table: third column must be 'Created by', got {hdr[2]!r}")
+    transitions = parse_transitions(trans_md, records) if trans_md else {"lede": "", "records": {}}
     assum_title, assum = "", []
     if assumptions:
         assum_title, _, assum_body = assumptions.partition("\n")
@@ -213,7 +215,117 @@ def parse_rules(body):
         stray = [l for l in assum_body.split("\n") if l.strip() and not l.startswith("- ")]
         if stray: die(f"Assumptions: non-list text {stray[0][:60]!r}")
     return {"lede": " ".join(lede), "rules": items, "workClassification": wc, "recordsLede": " ".join(rec_lede), "records": records,
-            "assumptionsTitle": clean(assum_title), "assumptions": assum}
+            "transitions": transitions, "assumptionsTitle": clean(assum_title), "assumptions": assum}
+
+# ---------- Record transitions (v14) ----------
+
+TRANS_COLS = ["From", "To", "Owning workflow", "Listens for", "Emits", "Pending human"]
+OPEN = re.compile(r'^open: DL-\d{3}$')   # a cell not yet decided: the Decisions Log entry id and nothing else
+
+def record_states(row):
+    """The state list of a records-table row, read the way tail.js reads it for the chips (v13): the first of
+    the row's first three sentences that is a comma list of 3 to 14 Capitalized names of at most five words,
+    each optionally followed by a parenthetical. Returns [] when the row has no such list (a status list in
+    prose, or a row with no states)."""
+    for sent in sentences(row[3])[:3]:
+        body = re.sub(r'^[^:(]{0,80}:\s*', '', sent).rstrip('.')
+        parts, cur, depth = [], "", 0
+        i = 0
+        while i < len(body):
+            ch = body[i]
+            if ch == "(": depth += 1
+            elif ch == ")": depth = max(0, depth - 1)
+            if depth == 0 and ch == "," and body[i + 1:i + 2] == " ":
+                parts.append(cur.strip()); cur = ""; i += 2; continue
+            cur += ch; i += 1
+        if cur.strip(): parts.append(cur.strip())
+        if not 3 <= len(parts) <= 14: continue
+        states = []
+        for p in parts:
+            m = re.match(r'^([^(]+?)\s*\((.+)\)\s*$', p)
+            name = (m.group(1) if m else p).strip()
+            if not re.match(r'^[A-Z]', name) or len(name.split()) > 5: states = None; break
+            states.append(name)
+        if states: return states
+    return []
+
+def parse_transitions(md, records):
+    """v14: the "### Record transitions" section: a lede, then one "#### <Record>" per record with one
+    six-column table (TRANS_COLS). Cells hold the value, nothing, or "open: DL-nnn". Listens for lists the
+    events that move the record, each spelled exactly as its emitter's Emits line spells it (a parenthetical
+    qualifier is allowed), or a source written in lower case (a person's action, a date arriving), separated
+    by commas. The three checks run in main() once every workflow is parsed; here the shape is checked."""
+    secs, order = split_h(md, 4)
+    lede = " ".join(clean(l) for l in secs.get("_head", "").split("\n") if l.strip())
+    names = {r[0] for r in records}
+    out = {}
+    for rec in order:
+        if rec not in names: die(f"Record transitions: {rec!r} is not a row of the records table")
+        body = secs[rec]
+        lines = body.split("\n")
+        tbl = [l for l in lines if l.startswith("|")]
+        if not tbl: die(f"Record transitions: {rec} has no table")
+        stray = [l for l in lines if l.strip() and not l.startswith("|")]
+        if stray: die(f"Record transitions: {rec}: text outside the table: {stray[0][:60]!r}")
+        hdr, rows = md_table(tbl, 6)
+        if hdr != TRANS_COLS: die(f"Record transitions: {rec}: columns must be {TRANS_COLS}, got {hdr}")
+        for r in rows:
+            frm, to, owner, listens, emits, human = r
+            if not to: die(f"Record transitions: {rec}: a row with no To state: {r}")
+            if not owner: die(f"Record transitions: {rec}: {frm or 'Created'} -> {to} has no owning workflow")
+            for c in r:
+                if c.lower().startswith("open:") and not OPEN.match(c): die(f"Record transitions: {rec}: an open cell reads {c!r}; it must be exactly 'open: DL-nnn'")
+        out[rec] = rows
+    return {"lede": lede, "records": out}
+
+def split_events(cell):
+    """A Listens for or Emits cell -> list of (name, is_event). Items are comma-separated outside parentheses;
+    a trailing parenthetical is a qualifier, not part of the name. An item that starts with a capital letter is
+    an event name; one that starts in lower case is a source and is not checked."""
+    if not cell or OPEN.match(cell): return []
+    items = [e.strip() for e in re.split(r",\s*(?![^()]*\))", cell) if e.strip()]
+    out = []
+    for it in items:
+        name = re.sub(r'\s*\([^()]*\)\s*$', '', it).strip()
+        out.append((name, bool(re.match(r'^[A-Z]', name))))
+    return out
+
+def check_transitions(doc):
+    """v14: the three checks. (1) every chip state of the record appears in From or To, and every From/To
+    state is a chip state; (2) every event a row emits is on the owning workflow's Emits line; (3) every event
+    a row listens for is emitted by some workflow. An open cell is skipped. Any failure stops the run."""
+    trans = doc["rules"]["transitions"]["records"]
+    if not trans: return
+    wfs = {w["name"]: w for d in doc["domains"] for w in d["workflows"]}
+    emitted = {}
+    for w in wfs.values():
+        for e in w["emits"]:
+            emitted.setdefault(re.sub(r'\s*\([^()]*\)\s*$', '', e).strip(), set()).add(w["name"])
+    byname = {r[0]: r for r in doc["rules"]["records"]}
+    for rec, rows in trans.items():
+        row = byname[rec]
+        states = record_states(row)
+        if not states: die(f"Record transitions: {rec} has a table but its record row has no state list the page can read")
+        creators = {re.sub(r'\s*\(.*\)$', '', c).strip() for c in row[2].split(";") if c.strip()}
+        seen = set()
+        for frm, to, owner, listens, emits, human in rows:
+            if owner not in wfs: die(f"Record transitions: {rec}: owning workflow {owner!r} is not a workflow in the Doc")
+            if not frm and owner not in creators: die(f"Record transitions: {rec}: {owner} creates the record but is not in its Created by column")
+            for s in (frm, to):
+                if s and not OPEN.match(s):
+                    if s not in states: die(f"Record transitions: {rec}: state {s!r} is not in the record's state list {states}")
+                    seen.add(s)
+            for name, is_event in split_events(emits):
+                if not is_event: die(f"Record transitions: {rec}: {frm or 'Created'} -> {to}: Emits {name!r} is not an event name")
+                if name not in [re.sub(r'\s*\([^()]*\)\s*$', '', e).strip() for e in wfs[owner]["emits"]]:
+                    die(f"Record transitions: {rec}: {frm or 'Created'} -> {to} emits {name!r}, which is not on {owner}'s Emits line (Rule 9: fix the name in one place, do not invent a third)")
+            for name, is_event in split_events(listens):
+                if is_event and name not in emitted:
+                    die(f"Record transitions: {rec}: {frm or 'Created'} -> {to} listens for {name!r}, which no workflow emits (Rule 9: use the emitter's name, or write a source in lower case)")
+        missing = [s for s in states if s not in seen]
+        if missing: die(f"Record transitions: {rec}: states with no transition row: {missing}")
+    n = sum(len(r) for r in trans.values())
+    print(f"transitions: {len(trans)} records, {n} rows; checks passed (states, Emits on owner, Listens for emitted)", file=sys.stderr)
 
 def parse_doc(md):
     secs, order = split_h(md, 2)
@@ -299,6 +411,7 @@ def main():
     hitl = parse_hitl(rd(sys.argv[2]))
     ret = parse_retention(rd(sys.argv[3]))
     # cross-check: every HITL workflow name must exist in the Doc (modulo the page's alias table)
+    check_transitions(doc)   # v14
     names = {w["name"] for d in doc["domains"] for w in d["workflows"]}
     alias = {"Shift Fulfillment (IRP)": "Shift Fulfillment", "EoR Hand-Off": "Employer of Record Hand-Off"}
     missing = sorted({p[0] for p in hitl["points"] if alias.get(p[0], p[0]) not in names})

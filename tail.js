@@ -170,10 +170,28 @@ function recordCard(r, idx) {
     ${creators ? `<p class="created"><span class="lbl">Created by</span>${creators}</p>` : ""}
     ${states ? `<div class="states">${states.map(s => `<span class="st">${md(s)}</span>`).join("")}</div>` : ""}
     ${summary ? `<p class="recsum">${md(summary)}</p>` : ""}
+    ${transHtml(r[0])}
     ${rest.length ? `<details class="recmore"><summary>Details <span>${rest.length} ${rest.length === 1 ? "note" : "notes"}</span></summary><ul>${rest.map(x => `<li>${md(x)}</li>`).join("")}</ul></details>` : ""}</section>`;
 }
+function transCell(v, kind) {  // v14: one cell of a transitions table
+  if (!v) return kind === "from" ? `<span class="tcreate">Created</span>` : "";
+  const open = v.match(/^open: (DL-\d{3})$/);
+  if (open) return `<span class="topen">open: ${open[1]}</span>`;
+  if (kind === "from" || kind === "to") return `<span class="st">${md(v)}</span>`;
+  if (kind === "owner") { const w = WF.find(w => w.name === v); return w ? `<a class="creator" href="#${w.slug}">${tq(v)}</a>` : tq(v); }
+  if (kind === "events") {  // comma list outside parentheses; Capitalized items are event names, lower-case items are sources
+    return v.split(/,\s*(?![^()]*\))/).map(x => x.trim()).filter(Boolean).map(x => /^[A-Z]/.test(x) ? `<span class="ev">${md(x)}</span>` : `<span class="src">${md(x)}</span>`).join("");
+  }
+  return md(v);
+}
+function transHtml(rec) {  // v14: the record's rows from the Doc's "Record transitions" section, if it has them
+  const rows = ((DOC.rules.transitions || {}).records || {})[rec];
+  if (!rows) return "";
+  return `<div class="trans"><p class="lbl">Transitions <span>${rows.length} ${rows.length === 1 ? "row" : "rows"}</span></p><div class="tblwrap"><table><thead><tr><th>From</th><th>To</th><th>Owning workflow</th><th>Listens for</th><th>Emits</th><th>Pending human</th></tr></thead><tbody>${rows.map(r => `<tr><td>${transCell(r[0], "from")}</td><td>${transCell(r[1], "to")}</td><td>${transCell(r[2], "owner")}</td><td>${transCell(r[3], "events")}</td><td>${transCell(r[4], "events")}</td><td>${transCell(r[5], "human")}</td></tr>`).join("")}</tbody></table></div></div>`;
+}
 function renderRecords() {
-  return `<div class="dhead"><p class="eyebrow"><b>Records</b><span>${RECORDS.length} record types</span></p><h1>Shared record state machines</h1><p class="lead">${md(DOC.rules.recordsLede)}</p></div>
+  const t = DOC.rules.transitions || { lede: "", records: {} }, nt = Object.keys(t.records).length;
+  return `<div class="dhead"><p class="eyebrow"><b>Records</b><span>${RECORDS.length} record types${nt ? ` · ${nt} with transitions` : ""}</span></p><h1>Shared record state machines</h1><p class="lead">${md(DOC.rules.recordsLede)}</p>${t.lede ? `<p class="lead translede">${md(t.lede)}</p>` : ""}</div>
   <div class="recs">${RECORDS.map((r, i) => recordCard(r, i)).join("")}</div>`;
 }
 function renderRules() {

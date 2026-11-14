@@ -1,4 +1,4 @@
-# Explorer generator (v12, November 13, 2026)
+# Explorer generator (v14, November 13, 2026)
 
 Builds the Explorer page from the three master Docs. Nothing on the page is typed by hand.
 
@@ -45,3 +45,17 @@ v12: the Human-in-the-Loop Map's "## Open" section and the Retention Table's "##
 v12 (November 13, 2026, later): the hero lede's scoped-out sentence in head.html now points to the Not modeled view instead of naming Access Control, since the table carries every scoped-out area.
 
 v13 (November 13, 2026): on the Records view a state chip shows the state name only. A parenthetical after a state in the record row's state list (a Pending human role, a deadline, a review date) is moved into the card's Details notes as "State: detail." Splitting the state list now respects parentheses, so a parenthetical with a comma no longer breaks the chips.
+
+v14 (November 13, 2026): the master Doc may carry a "### Record transitions" section after the "Shared record
+state machines" table (before "### Assumptions" if that ever returns): a lede, then one "#### <Record>" per
+record with one six-column table: From, To, Owning workflow, Listens for, Emits, Pending human. <Record> must
+match the first column of a records-table row. From is blank on a creation row; a cell that is not decided
+reads exactly "open: DL-nnn". Listens for and Emits are comma lists outside parentheses; an item starting with a
+capital letter is an event name (a trailing parenthetical is a qualifier, not part of the name), an item in lower
+case is a source and is not checked. gen.py parses it into DOC.rules.transitions and runs three checks that stop
+the run: every state in the record row's chip list appears in From or To and every From/To state is in that
+list; every event a row emits is on the owning workflow's Emits line; every event a row listens for is emitted by
+some workflow. The owning workflow must be a workflow in the Doc, and a creation row's owner must be in the
+record's Created by column. The section is optional; a Doc without it still builds. tail.js draws each record's
+table under its card on the Records view (state chips, owner chip linked to the workflow, event chips, open
+cells as dashed amber chips) and shows the section lede under the Records lead; head.html styles .trans.
