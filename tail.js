@@ -135,21 +135,37 @@ function ownerChip(owner) {
   return d ? `<span class="own d" style="--h:${d.hue}">${tq(owner)}</span>` : tq(owner);
 }
 function splitSentences(t) { return t.split(/(?<=[.!?])\s+(?=[A-Z"(\u201c])/).map(x => x.trim()).filter(Boolean); }
-function stateList(sent) {
-  const body = sent.replace(/^[^:]{0,80}:\s*/, "").replace(/\.$/, "");
-  const parts = body.split(/,\s+/).map(x => x.trim()).filter(Boolean);
+function stateList(sent) {  // v13: chips carry the state name only; a parenthetical after a state becomes a note
+  const body = sent.replace(/^[^:(]{0,80}:\s*/, "").replace(/\.$/, "");  // a label such as "States:" is stripped only if it comes before any parenthesis
+  const parts = []; let cur = "", depth = 0;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (ch === "(") depth++; else if (ch === ")") depth = Math.max(0, depth - 1);
+    if (depth === 0 && ch === "," && body[i + 1] === " ") { parts.push(cur.trim()); cur = ""; i++; continue; }
+    cur += ch;
+  }
+  if (cur.trim()) parts.push(cur.trim());
   if (parts.length < 3 || parts.length > 14) return null;
-  const ok = parts.every(p => /^[A-Z]/.test(p.replace(/^\(/, "")) && p.replace(/\s*\(.*?\)\s*/g, " ").trim().split(/\s+/).length <= 5);
-  return ok ? parts : null;
+  const states = [], notes = [];
+  for (const p of parts) {
+    const m = p.match(/^([^(]+?)\s*\((.+)\)\s*$/);
+    const name = (m ? m[1] : p).trim(), detail = m ? m[2].trim() : "";
+    if (!/^[A-Z]/.test(name) || name.split(/\s+/).length > 5) return null;
+    states.push(name);
+    if (detail) notes.push(`${name}: ${detail}.`);
+  }
+  return { states, notes };
 }
 function recordCard(r, idx) {
   const sents = splitSentences(r[3]);
   const creators = r[2].split(/;\s*/).filter(Boolean).map(c => { const m = c.match(/^(.*?)\s*(\(.*\))?$/); const w = WF.find(w => w.name === m[1].trim()); return w ? `<a class="creator" href="#${w.slug}">${tq(m[1])}${m[2] ? `<small>${tq(m[2])}</small>` : ""}</a>` : `<span class="creator">${tq(c)}</span>`; }).join("");
   const dom = DOMAINS.find(d => r[1].startsWith(d.name) || (d.id==="job-pricing" && r[1].startsWith("Pricing")) || (d.id==="foundational-data" && r[1].startsWith("Foundational")));
   let states = null, si = -1;
-  for (let i = 0; i < Math.min(sents.length, 3); i++) { const st = stateList(sents[i]); if (st) { states = st; si = i; break; } }
+  let stateNotes = [];
+  for (let i = 0; i < Math.min(sents.length, 3); i++) { const st = stateList(sents[i]); if (st) { states = st.states; stateNotes = st.notes; si = i; break; } }
   const rest = sents.filter((_, i) => i !== si);
   const summary = rest.shift() || "";
+  rest.unshift(...stateNotes);
   return `<section class="rec${dom ? " d" : ""}" data-i="${idx % 4}"${dom ? ` style="--h:${dom.hue}"` : ""}><div class="rechd"><h2>${md(r[0])}</h2>${ownerChip(r[1])}</div>
     ${creators ? `<p class="created"><span class="lbl">Created by</span>${creators}</p>` : ""}
     ${states ? `<div class="states">${states.map(s => `<span class="st">${md(s)}</span>`).join("")}</div>` : ""}

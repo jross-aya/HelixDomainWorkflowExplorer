@@ -43,3 +43,5 @@ v11: the Open items view is removed. Open items live only in the Decisions Log, 
 v12: the Human-in-the-Loop Map's "## Open" section and the Retention Table's "## Still open" section are removed; their items are DL entries in the Decisions Log. gen.py stops if either section comes back; HITL.open and RETENTION.open no longer exist and their views render no open list.
 
 v12 (November 13, 2026, later): the hero lede's scoped-out sentence in head.html now points to the Not modeled view instead of naming Access Control, since the table carries every scoped-out area.
+
+v13 (November 13, 2026): on the Records view a state chip shows the state name only. A parenthetical after a state in the record row's state list (a Pending human role, a deadline, a review date) is moved into the card's Details notes as "State: detail." Splitting the state list now respects parentheses, so a parenthetical with a comma no longer breaks the chips.
