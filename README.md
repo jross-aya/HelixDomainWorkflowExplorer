@@ -41,3 +41,5 @@ v10: the master Doc may carry a "## Not modeled" section (a lede, a four-column 
 v11: the Open items view is removed. Open items live only in the Decisions Log, as numbered entries (DL-nnn) with owner, due date and status, where the resolution, who decided it and when are recorded on the same entry. gen.py stops if the master Doc still carries a "## Still open" section; DOC.open no longer exists and tail.js has no renderOpen. 
 
 v12: the Human-in-the-Loop Map's "## Open" section and the Retention Table's "## Still open" section are removed; their items are DL entries in the Decisions Log. gen.py stops if either section comes back; HITL.open and RETENTION.open no longer exist and their views render no open list.
+
+v12 (November 13, 2026, later): the hero lede's scoped-out sentence in head.html now points to the Not modeled view instead of naming Access Control, since the table carries every scoped-out area.
