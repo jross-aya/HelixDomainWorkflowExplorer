@@ -1,11 +1,11 @@
-# Explorer generator (v14, November 13, 2026)
+# Explorer generator (v15, November 18, 2026)
 
-Builds the Explorer page from the three master Docs. Nothing on the page is typed by hand.
+Builds the Explorer page from the four master Docs. Nothing on the page is typed by hand.
 
-    python3 gen.py doc.md hitl.md retention.md head.html tail.js > index.html
+    python3 gen.py doc.md hitl.md retention.md register.md head.html tail.js > index.html
 
 Inputs: markdown exports of Helix Domains & Workflows (doc.md), Helix Human-in-the-Loop Map (hitl.md),
-Helix Record Retention Table (retention.md). head.html and tail.js are the page's CSS and JavaScript;
+Helix Record Retention Table (retention.md), Helix Notification Register (register.md). head.html and tail.js are the page's CSS and JavaScript;
 style changes go there, never in index.html.
 
 The parser stops on anything it does not recognize (a new field label, a new section, a table with the
@@ -59,3 +59,13 @@ some workflow. The owning workflow must be a workflow in the Doc, and a creation
 record's Created by column. The section is optional; a Doc without it still builds. tail.js draws each record's
 table under its card on the Records view (state chips, owner chip linked to the workflow, event chips, open
 cells as dashed amber chips) and shows the section lede under the Records lead; head.html styles .trans.
+
+v15: a fourth master Doc, the Helix Notification Register, one row per trigger that makes a workflow or an advocate
+call the Notification System (Domain, Trigger, Owning workflow, Recipient, Category, Caller, Legal basis, Channel
+fixed, Deadline), plus a table of advocate-owned sends the master Doc already names. gen.py parses it into REGISTER
+and runs two checks that stop the run: every owning or emitting workflow is a workflow in the Doc, and every
+Capitalized item in a Trigger cell is an event some workflow emits or a "Record: State" the records table carries
+(a trailing parenthetical is a qualifier; items separated by "; "; lower-case items and "Pending human: ..." are
+sources and are not checked). A category must be Required, Transactional, Engagement or "open: DL-nnn". The page
+gains a Notifications view with recipient and category filters; each event links to the workflow that emits it,
+and search covers the rows. No Notifies row on workflow cards yet.

@@ -4,7 +4,8 @@ const DOCS = [
   ["Helix Domains & Workflows (master doc)", "https://claude.ai/artifact/52bJejmTcBnvzPnxngdHhz"],
   ["Helix Decisions Log", "https://claude.ai/artifact/XTj571E3pwSU9DcnZqaZ9g"],
   ["Helix Human-in-the-Loop Map", "https://claude.ai/artifact/KjKEj197fg2aZTV8A3rQaZ"],
-  ["Helix Record Retention Table", "https://claude.ai/artifact/5u9zcu9DuuwrxhVL3RdX8i"]
+  ["Helix Record Retention Table", "https://claude.ai/artifact/5u9zcu9DuuwrxhVL3RdX8i"],
+  ["Helix Notification Register", "https://claude.ai/artifact/AGFoXtoUnMjLwtvUCzLuwt"]   // v15
 ];
 
 // Content of the Human-in-the-Loop Map and the Record Retention Table (master Claude Docs, linked in DOCS). Mirrored here November 4, 2026; the Docs stay the master copies.
@@ -42,8 +43,8 @@ function mdBlocks(text) {
 const DOMAINS = DOC.domains.slice().sort((a,b)=>({Platform:0,Foundation:1}[a.kind]??2)-({Platform:0,Foundation:1}[b.kind]??2));
 const WF = []; DOMAINS.forEach(d => d.workflows.forEach(w => { w.slug = slug(w.name); w.domain = d; WF.push(w); }));
 const RECORDS = DOC.rules.records, RULES = DOC.rules.rules;
-const VIEWS = { domains: 1, records: 1, rules: 1, humans: 1, retention: 1, notmodeled: 1, about: 1 };  // v11: Open items view removed; open items live only in the Decisions Log
-let state = { view: "domains", domain: DOMAINS[0].id, wf: null, q: "", event: null };
+const VIEWS = { domains: 1, records: 1, rules: 1, humans: 1, retention: 1, notifications: 1, notmodeled: 1, about: 1 };  // v11: Open items view removed; v15: Notifications view added
+let state = { view: "domains", domain: DOMAINS[0].id, wf: null, q: "", event: null, nfRecipient: "", nfCategory: "" };
 const layerTag = d => { const m = /Layer (\d+)/.exec(d.layer); return m ? "L" + m[1] : "PL"; };
 const plus = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
 const EVENTS = new Set(); WF.forEach(w => w.emits.forEach(e => EVENTS.add(e)));
@@ -244,18 +245,51 @@ function renderRetention() {
   <h2 class="parth">Sources checked</h2><div class="prose"><ul>${RETENTION.sources.map(x => `<li>${md(x)}</li>`).join("")}</ul></div>
   <h2 class="docsh">Master doc</h2><div class="docs"><a href="${esc(DOCS[3][1])}" target="_blank" rel="noopener">${tq(DOCS[3][0])}<small>Claude Doc</small></a></div>`;
 }
+// v15: the Notification Register. One row per trigger; the Trigger cell links each event to the workflow that
+// emits it (as the transitions tables do) and each "Record: State" to the owning workflow. Filters are per
+// viewer and not kept.
+const NF_RECIPIENTS = ["Talent", "Client User", "Partner contact"];
+function nfTrigger(cell) {
+  return cell.split(";").map(x => x.trim()).filter(Boolean).map(x => {
+    if (/^pending human/i.test(x) || !/^[A-Z]/.test(x)) return `<span class="src">${md(x)}</span>`;
+    const base = x.replace(/\s*\([^()]*\)\s*$/, "");
+    const w = WF.find(w => w.emits.some(e => e.replace(/\s*\([^()]*\)\s*$/, "") === base));
+    if (w) return `<a class="tev" href="#${w.slug}" title="Emitted by ${esc(w.name)}">${md(x)}</a>`;
+    return `<a class="tev" href="#records" title="A record and state; see the Records view">${md(x)}</a>`;
+  }).join("");
+}
+function nfOwner(cell) { return cell.split(";").map(x => x.trim()).filter(Boolean).map(v => { const w = WF.find(w => w.name === v); return w ? `<a class="creator" href="#${w.slug}">${tq(v)}</a>` : tq(v); }).join("; "); }
+function nfCell(v) { const o = v.match(/^open: (DL-\d{3})$/); return o ? `<span class="topen">open: ${o[1]}</span>` : md(v); }
+function renderNotifications() {
+  const rows = REGISTER.rows.filter(r => (!state.nfRecipient || r[3].includes(state.nfRecipient)) && (!state.nfCategory || r[4] === state.nfCategory));
+  const counts = c => REGISTER.rows.filter(r => r[4] === c).length;
+  const chip = (k, v, label) => `<button class="nf" data-nf="${k}" data-v="${esc(v)}" aria-pressed="${state[k] === v}">${esc(label)}</button>`;
+  const how = REGISTER.how.map(b => b.p != null ? `<p>${md(b.p)}</p>`
+    : `<div class="tblwrap"><table><thead><tr>${b.table.head.map(c => `<th>${md(c)}</th>`).join("")}</tr></thead><tbody>${b.table.rows.map(r => `<tr>${r.map(c => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("");
+  return `<div class="dhead"><p class="eyebrow"><b>Notifications</b><span>${REGISTER.rows.length} triggers: ${counts("Required")} required, ${counts("Transactional")} transactional; ${REGISTER.advocateRows.length} advocate-owned</span></p><h1>Notification register</h1><p class="lead">${md(REGISTER.lede)}</p></div>
+  <h2 class="parth">How to read this</h2><div class="prose">${how}</div>
+  <h2 class="parth">Required and transactional sends</h2>
+  <div class="nffilters"><span>Recipient</span>${chip("nfRecipient", "", "All")}${NF_RECIPIENTS.map(r => chip("nfRecipient", r, r)).join("")}<span>Category</span>${chip("nfCategory", "", "All")}${["Required", "Transactional"].map(c => chip("nfCategory", c, c)).join("")}<em>${rows.length} of ${REGISTER.rows.length} rows</em></div>
+  <div class="tblwrap nf"><table><thead><tr>${["Domain", "Trigger", "Owning workflow", "Recipient", "Category", "Caller", "Legal basis", "Channel fixed", "Deadline"].map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr><td>${tq(r[0])}</td><td>${nfTrigger(r[1])}</td><td>${nfOwner(r[2])}</td><td>${nfCell(r[3])}</td><td><span class="cat ${r[4].toLowerCase().replace(/[^a-z]/g, "")}">${nfCell(r[4])}</span></td><td>${nfCell(r[5])}</td><td>${nfCell(r[6])}</td><td>${nfCell(r[7])}</td><td>${nfCell(r[8])}</td></tr>`).join("")}</tbody></table></div>
+  ${REGISTER.footer ? `<p class="lead" style="margin-top:18px;font-size:14.5px">${md(REGISTER.footer)}</p>` : ""}
+  <h2 class="parth">${tq(REGISTER.advocateTitle)}</h2><p class="lead" style="font-size:14.5px">${md(REGISTER.advocateLede)}</p>
+  <div class="tblwrap nf"><table><thead><tr>${["Trigger", "Emitting workflow", "Advocate", "Recipient", "What the master Doc says"].map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>${REGISTER.advocateRows.map(r => `<tr><td>${nfTrigger(r[0])}</td><td>${nfOwner(r[1])}</td><td>${md(r[2])}</td><td>${md(r[3])}</td><td>${nfCell(r[4])}</td></tr>`).join("")}</tbody></table></div>
+  <h2 class="docsh">Master doc</h2><div class="docs"><a href="${esc(DOCS[4][1])}" target="_blank" rel="noopener">${tq(DOCS[4][0])}<small>Claude Doc</small></a></div>`;
+}
 function renderSearch() {
   const q = state.q.toLowerCase();
   const hits = WF.filter(w => [w.name, w.decision, w.triggers, w.measure, w.added || "", w.edges || "", ...w.tasks, ...w.emits, ...w.types].join(" ").toLowerCase().includes(q));
   const recs = RECORDS.filter(r => r.join(" ").toLowerCase().includes(q));
   const hps = HITL.points.filter(p => p.join(" ").toLowerCase().includes(q));
   const rets = RETENTION.rows.filter(r => r.join(" ").toLowerCase().includes(q));
-  const parts = [`${hits.length} workflow${hits.length===1?"":"s"}`]; if (recs.length) parts.push(`${recs.length} record${recs.length===1?"":"s"}`); if (hps.length) parts.push(`${hps.length} human point${hps.length===1?"":"s"}`); if (rets.length) parts.push(`${rets.length} retention row${rets.length===1?"":"s"}`);
+  const nfs = REGISTER.rows.filter(r => r.join(" ").toLowerCase().includes(q));   // v15
+  const parts = [`${hits.length} workflow${hits.length===1?"":"s"}`]; if (recs.length) parts.push(`${recs.length} record${recs.length===1?"":"s"}`); if (hps.length) parts.push(`${hps.length} human point${hps.length===1?"":"s"}`); if (rets.length) parts.push(`${rets.length} retention row${rets.length===1?"":"s"}`); if (nfs.length) parts.push(`${nfs.length} notification${nfs.length===1?"":"s"}`);
   let html = `<div class="dhead"><h1>Results</h1><p class="hits">${parts.join(", ")} match.</p></div>`;
   if (recs.length) html += `<div class="tblwrap"><table><thead><tr><th>Record</th><th>Owner</th><th>Why it must be defined first</th></tr></thead><tbody>${recs.map(r => `<tr><td>${md(r[0])}</td><td>${ownerChip(r[1])}</td><td>${md(r[3])}</td></tr>`).join("")}</tbody></table></div><br>`;
   if (hps.length) html += `<h2 class="parth">Human points</h2><div class="tblwrap hp"><table><thead><tr><th>Workflow</th><th>Human point</th><th>Reason</th><th>Role</th></tr></thead><tbody>${hps.map(p => `<tr><td>${tq(p[0])}</td><td>${md(p[1])}</td><td>${reasonChips(p[2])}</td><td>${md(p[3])}</td></tr>`).join("")}</tbody></table></div><br>`;
   if (rets.length) html += `<h2 class="parth">Retention</h2><div class="tblwrap ret"><table><thead><tr><th>Record</th><th>Owning domain</th><th>Keep for</th><th>Clock starts</th><th>On deletion request</th></tr></thead><tbody>${rets.map(r => `<tr><td>${md(r[0])}</td><td>${tq(r[1])}</td><td>${md(r[2])}</td><td>${md(r[3])}</td><td>${md(r[5])}</td></tr>`).join("")}</tbody></table></div><br>`;
-  if (!hits.length && !recs.length && !hps.length && !rets.length) html += `<div class="empty">Nothing matches. Try an event name as it appears in an Emits line, a record name, or an employment type.</div>`;
+  if (nfs.length) html += `<h2 class="parth">Notifications</h2><div class="tblwrap nf"><table><thead><tr><th>Trigger</th><th>Owning workflow</th><th>Recipient</th><th>Category</th><th>Caller</th></tr></thead><tbody>${nfs.map(r => `<tr><td>${nfTrigger(r[1])}</td><td>${nfOwner(r[2])}</td><td>${nfCell(r[3])}</td><td>${nfCell(r[4])}</td><td>${nfCell(r[5])}</td></tr>`).join("")}</tbody></table></div><br>`;
+  if (!hits.length && !recs.length && !hps.length && !rets.length && !nfs.length) html += `<div class="empty">Nothing matches. Try an event name as it appears in an Emits line, a record name, or an employment type.</div>`;
   hits.forEach(w => { html += wfHtml(w, true); });
   return html;
 }
@@ -271,6 +305,7 @@ function render() {
   else if (state.view === "rules") c.innerHTML = renderRules();
   else if (state.view === "humans") c.innerHTML = renderHumans();
   else if (state.view === "retention") c.innerHTML = renderRetention();
+  else if (state.view === "notifications") c.innerHTML = renderNotifications();   // v15
   else if (state.view === "notmodeled") c.innerHTML = renderNotModeled();
   else if (state.view === "about") c.innerHTML = renderAbout();
   else c.innerHTML = renderDomains() + `<h2 class="docsh">Master docs</h2><p class="asof">${esc(DOC.asof)}</p><div class="docs">${DOCS.map(x => `<a href="${esc(x[1])}" target="_blank" rel="noopener">${tq(x[0])}<small>Claude Doc</small></a>`).join("")}</div>`;
@@ -281,6 +316,7 @@ document.addEventListener("click", e => {
   const f = e.target.closest(".flow .fd"); if (f) { state.q = ""; document.getElementById("q").value = ""; go(f.dataset.dom); document.getElementById("content").scrollIntoView({ block: "start" }); return; }
   const v = e.target.closest("nav.views button"); if (v) { state.q = ""; document.getElementById("q").value = ""; go(v.dataset.view === "domains" ? state.domain : v.dataset.view); document.getElementById("content").scrollIntoView({ block: "start" }); return; }
   const h = e.target.closest("button.hd"); if (h) { const s = h.parentElement; const open = !s.hasAttribute("open"); s.toggleAttribute("open", open); h.setAttribute("aria-expanded", open); if (open && !state.q) { state.wf = h.dataset.wf; history.replaceState(null, "", "#" + state.wf); } return; }
+  const nf = e.target.closest("button.nf"); if (nf) { state[nf.dataset.nf] = nf.dataset.v; render(); return; }   // v15: register filters
   const ev = e.target.closest(".ev"); if (ev) { state.event = ev.dataset.ev; state.q = ""; document.getElementById("q").value = ""; render(); document.querySelector(".evpanel").scrollIntoView({ block: "start" }); return; }
   if (e.target.closest("[data-close]")) { state.event = null; render(); }
 });

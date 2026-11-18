@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Build the Explorer page from the three master Docs.
+"""Build the Explorer page from the four master Docs.
 
-Usage: gen.py doc.md hitl.md retention.md head.html tail.js > index.html
+Usage: gen.py doc.md hitl.md retention.md register.md head.html tail.js > index.html
 
-Everything that reaches the page comes from the three markdown exports:
-  doc.md       Helix Domains & Workflows   -> DOC
-  hitl.md      Helix Human-in-the-Loop Map -> HITL
+Everything that reaches the page comes from the four markdown exports:
+  doc.md       Helix Domains & Workflows    -> DOC
+  hitl.md      Helix Human-in-the-Loop Map  -> HITL
   retention.md Helix Record Retention Table -> RETENTION
+  register.md  Helix Notification Register  -> REGISTER   (v15, November 18, 2026)
 The only thing this file adds is presentation metadata per domain (id, hue, layer, type,
 role), which lives in META_DOMAINS and carries no content. Anything the parser does not
 recognize stops the run; nothing is dropped silently.
@@ -402,27 +403,102 @@ def parse_retention(md):
     if secs: die(f"Retention: unknown sections {list(secs)}")
     return {"lede": lede, "corrections": corrections, "rows": rows, "forces": forces, "sources": sources}
 
+# ---------- Notification Register (v15) ----------
+
+REG_COLS = ["Domain", "Trigger", "Owning workflow", "Recipient", "Category", "Caller", "Legal basis", "Channel fixed", "Deadline"]
+REG_ADV_COLS = ["Trigger", "Emitting workflow", "Advocate", "Recipient", "What the master Doc says"]
+CATEGORIES = {"Required", "Transactional", "Engagement"}
+
+def parse_register(md):
+    """v15: the Notification Register: a lede, "How to read this" (prose and a small table), one nine-column
+    table of Required and Transactional rows (REG_COLS) with an optional footer, and the advocate-owned table
+    (REG_ADV_COLS) with its lede. Anything else stops the run. Checks that need the Doc run in check_register."""
+    secs, order = split_h(md, 2)
+    head = [l for l in secs.pop("_head").split("\n") if l.strip()]
+    lede = " ".join(clean(l) for l in head[2:])
+    how = parse_blocks(secs.pop("How to read this"))
+    rows_md = secs.pop("Required and transactional sends")
+    lines = rows_md.split("\n")
+    tbl = [l for l in lines if l.startswith("|")]
+    if not tbl: die("Register: no rows table")
+    hdr, rows = md_table(tbl, len(REG_COLS))
+    if hdr != REG_COLS: die(f"Register: columns must be {REG_COLS}, got {hdr}")
+    last = max(i for i, l in enumerate(lines) if l.startswith("|"))
+    first = next(i for i, l in enumerate(lines) if l.startswith("|"))
+    if any(l.strip() for l in lines[:first]): die("Register: text before the rows table")
+    footer = " ".join(clean(l) for l in lines[last + 1:] if l.strip())
+    adv_title = "Advocate-owned sends the master Doc already names"
+    adv_md = secs.pop(adv_title)
+    alines = adv_md.split("\n")
+    atbl = [l for l in alines if l.startswith("|")]
+    if not atbl: die("Register: advocate table missing")
+    ahdr, arows = md_table(atbl, len(REG_ADV_COLS))
+    if ahdr != REG_ADV_COLS: die(f"Register: advocate columns must be {REG_ADV_COLS}, got {ahdr}")
+    afirst = next(i for i, l in enumerate(alines) if l.startswith("|"))
+    alede = " ".join(clean(l) for l in alines[:afirst] if l.strip())
+    if secs: die(f"Register: unknown sections {list(secs)}")
+    for r in rows:
+        if not r[1]: die(f"Register: a row with no trigger: {r}")
+        if not r[2]: die(f"Register: {r[1]!r} has no owning workflow")
+        if r[4] not in CATEGORIES and not OPEN.match(r[4]): die(f"Register: {r[1]!r}: category {r[4]!r} is not Required, Transactional, Engagement or 'open: DL-nnn'")
+        for c in r:
+            if c.lower().startswith("open:") and not OPEN.match(c): die(f"Register: {r[1]!r}: an open cell reads {c!r}; it must be exactly 'open: DL-nnn'")
+    return {"lede": lede, "how": how, "rows": rows, "footer": footer, "advocateLede": alede, "advocateTitle": adv_title, "advocateRows": arows}
+
+def check_register(doc, reg):
+    """v15: (1) every owning or emitting workflow is a workflow in the Doc; (2) every Capitalized item in a
+    Trigger cell is an event some workflow emits, or a record and state ("Job: Pending Approval") that the
+    records table carries; items in lower case or starting "Pending human:" are sources and are not checked.
+    Items are separated by "; "; a trailing parenthetical is a qualifier. Any failure stops the run."""
+    wfs = {w["name"] for d in doc["domains"] for w in d["workflows"]}
+    emitted = {re.sub(r'\s*\([^()]*\)\s*$', '', e).strip() for d in doc["domains"] for w in d["workflows"] for e in w["emits"]}
+    byname = {re.sub(r'\s*\(.*\)$', '', r[0]).strip(): r for r in doc["rules"]["records"]}   # "Staffing Advisory (was ...)" -> "Staffing Advisory"
+    def check_trigger(cell, where):
+        for it in [x.strip() for x in cell.split(";") if x.strip()]:
+            if it.lower().startswith("pending human") or not re.match(r'^[A-Z]', it): continue
+            name = re.sub(r'\s*\([^()]*\)\s*$', '', it).strip()
+            if name in emitted: continue
+            rec, _, state = name.partition(": ")
+            if state:
+                row = byname.get(rec)
+                if not row: die(f"Register: {where}: {name!r} names a record that is not a row of the records table")
+                if state not in record_states(row): die(f"Register: {where}: state {state!r} is not in {rec}'s state list {record_states(row)}")
+                continue
+            die(f"Register: {where}: {name!r} is neither an event any workflow emits nor a 'Record: State' the records table carries (Rule 9: spell it as the Emits line does, or write a source in lower case)")
+    for r in reg["rows"]:
+        for w in [x.strip() for x in r[2].split(";") if x.strip()]:
+            if w not in wfs: die(f"Register: {r[1]!r}: owning workflow {w!r} is not a workflow in the Doc")
+        check_trigger(r[1], r[1])
+    for r in reg["advocateRows"]:
+        for w in [x.strip() for x in r[1].split(";") if x.strip()]:
+            if w not in wfs: die(f"Register (advocate): {r[0]!r}: emitting workflow {w!r} is not a workflow in the Doc")
+        check_trigger(r[0], "advocate " + r[0])
+    print(f"register: {len(reg['rows'])} rows, {len(reg['advocateRows'])} advocate rows; checks passed (workflows exist, triggers are emitted events or record states)", file=sys.stderr)
+
 # ---------- main ----------
 
 def main():
-    if len(sys.argv) != 6: die(__doc__)
+    if len(sys.argv) != 7: die(__doc__)
     rd = lambda p: open(p, encoding="utf-8").read()
     doc = parse_doc(rd(sys.argv[1]))
     hitl = parse_hitl(rd(sys.argv[2]))
     ret = parse_retention(rd(sys.argv[3]))
+    reg = parse_register(rd(sys.argv[4]))   # v15
     # cross-check: every HITL workflow name must exist in the Doc (modulo the page's alias table)
     check_transitions(doc)   # v14
+    check_register(doc, reg)   # v15
     names = {w["name"] for d in doc["domains"] for w in d["workflows"]}
     alias = {"Shift Fulfillment (IRP)": "Shift Fulfillment", "EoR Hand-Off": "Employer of Record Hand-Off"}
     missing = sorted({p[0] for p in hitl["points"] if alias.get(p[0], p[0]) not in names})
     if missing: print(f"WARNING: HITL rows name workflows not in the Doc: {missing}", file=sys.stderr)
     js = ("const DOC = " + json.dumps(doc, ensure_ascii=False, indent=1) + ";\n"
           + "const HITL = " + json.dumps(hitl, ensure_ascii=False, indent=1) + ";\n"
-          + "const RETENTION = " + json.dumps(ret, ensure_ascii=False, indent=1) + ";\n")
-    sys.stdout.write(rd(sys.argv[4]) + js + rd(sys.argv[5]))
+          + "const RETENTION = " + json.dumps(ret, ensure_ascii=False, indent=1) + ";\n"
+          + "const REGISTER = " + json.dumps(reg, ensure_ascii=False, indent=1) + ";\n")
+    sys.stdout.write(rd(sys.argv[5]) + js + rd(sys.argv[6]))
     n = sum(len(d["workflows"]) for d in doc["domains"])
     wc_rows = next(len(b["table"]["rows"]) for b in doc["rules"]["workClassification"] if "table" in b)  # first table; parse_rules guarantees one
     print(f"domains={len(doc['domains'])} workflows={n} records={len(doc['rules']['records'])} rules={len(doc['rules']['rules'])} wc-inputs={wc_rows} "
-          f"hitl-points={len(hitl['points'])} retention-rows={len(ret['rows'])} not-modeled={len(doc['notModeled']['rows'])}", file=sys.stderr)
+          f"hitl-points={len(hitl['points'])} retention-rows={len(ret['rows'])} register-rows={len(reg['rows'])} not-modeled={len(doc['notModeled']['rows'])}", file=sys.stderr)
 
 if __name__ == "__main__": main()
