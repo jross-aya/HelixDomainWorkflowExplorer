@@ -224,7 +224,10 @@ section.wf[open] .bd{display:block;animation:bdin .22s ease-out}
 .rec[data-i="0"]{--sc:var(--coral)}.rec[data-i="1"]{--sc:var(--violet)}.rec[data-i="2"]{--sc:var(--aqua)}.rec[data-i="3"]{--sc:var(--amber)}
 .recsum{font-size:15px;color:var(--fg);max-width:78ch}
 .trans{margin-top:12px}
-.trans>.lbl{font:600 13px var(--body);color:var(--muted);display:inline-flex;align-items:center;gap:8px;margin:0 0 6px}
+.trans>.lbl{font:600 13px var(--body);color:var(--muted);display:inline-flex;align-items:center;gap:8px;margin:0 0 6px;cursor:pointer;list-style:none;padding:4px 0} /* v16: a summary; the table is collapsed by default */
+.trans>.lbl::-webkit-details-marker{display:none}
+.trans>.lbl::before{content:"";width:7px;height:7px;border-right:2px solid var(--violet);border-bottom:2px solid var(--violet);transform:rotate(-45deg);transition:transform .15s}
+.trans[open]>.lbl::before{transform:rotate(45deg)}
 .trans>.lbl span{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase}
 .trans table{font-size:13.5px}
 .trans td{vertical-align:top}

@@ -195,7 +195,8 @@ function transCell(v, kind) {  // v14: one cell of a transitions table
 function transHtml(rec) {  // v14: the record's rows from the Doc's "Record transitions" section, if it has them
   const rows = ((DOC.rules.transitions || {}).records || {})[rec];
   if (!rows) return "";
-  return `<div class="trans"><p class="lbl">Transitions <span>${rows.length} ${rows.length === 1 ? "row" : "rows"}</span></p><div class="tblwrap"><table><thead><tr><th>From</th><th>To</th><th>Owning workflow</th><th>Listens for</th><th>Emits</th><th>Pending human</th></tr></thead><tbody>${rows.map(r => `<tr><td>${transCell(r[0], "from")}</td><td>${transCell(r[1], "to")}</td><td>${transCell(r[2], "owner")}</td><td>${transCell(r[3], "events")}</td><td>${transCell(r[4], "events")}</td><td>${transCell(r[5], "human")}</td></tr>`).join("")}</tbody></table></div></div>`;
+  // v16: collapsed by default; the Records view lists every record, so an open table per record meant a long scroll.
+  return `<details class="trans"><summary class="lbl">Transitions <span>${rows.length} ${rows.length === 1 ? "row" : "rows"}</span></summary><div class="tblwrap"><table><thead><tr><th>From</th><th>To</th><th>Owning workflow</th><th>Listens for</th><th>Emits</th><th>Pending human</th></tr></thead><tbody>${rows.map(r => `<tr><td>${transCell(r[0], "from")}</td><td>${transCell(r[1], "to")}</td><td>${transCell(r[2], "owner")}</td><td>${transCell(r[3], "events")}</td><td>${transCell(r[4], "events")}</td><td>${transCell(r[5], "human")}</td></tr>`).join("")}</tbody></table></div></details>`;
 }
 function renderRecords() {
   const t = DOC.rules.transitions || { lede: "", records: {} }, nt = Object.keys(t.records).length;

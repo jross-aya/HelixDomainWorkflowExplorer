@@ -1,4 +1,4 @@
-# Explorer generator (v15, November 18, 2026)
+# Explorer generator (v16, November 18, 2026)
 
 Builds the Explorer page from the four master Docs. Nothing on the page is typed by hand.
 
@@ -69,3 +69,5 @@ Capitalized item in a Trigger cell is an event some workflow emits or a "Record:
 sources and are not checked). A category must be Required, Transactional, Engagement or "open: DL-nnn". The page
 gains a Notifications view with recipient and category filters; each event links to the workflow that emits it,
 and search covers the rows. No Notifies row on workflow cards yet.
+
+v16 (November 18, 2026): on the Records view each record's transitions table is a collapsed disclosure ("Transitions · n rows") under the card, opened per record by the viewer, so the view no longer scrolls through every table at once. tail.js (transHtml) and head.html (.trans) only; gen.py and the Doc format are unchanged.
