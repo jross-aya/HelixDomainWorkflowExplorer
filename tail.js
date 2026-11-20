@@ -43,7 +43,7 @@ function mdBlocks(text) {
 const DOMAINS = DOC.domains.slice().sort((a,b)=>({Platform:0,Foundation:1}[a.kind]??2)-({Platform:0,Foundation:1}[b.kind]??2));
 const WF = []; DOMAINS.forEach(d => d.workflows.forEach(w => { w.slug = slug(w.name); w.domain = d; WF.push(w); }));
 const RECORDS = DOC.rules.records, RULES = DOC.rules.rules;
-const VIEWS = { domains: 1, records: 1, rules: 1, humans: 1, retention: 1, notifications: 1, notmodeled: 1, about: 1 };  // v11: Open items view removed; v15: Notifications view added
+const VIEWS = { start: 1, domains: 1, records: 1, rules: 1, humans: 1, retention: 1, notifications: 1, notmodeled: 1, about: 1 };  // v11: Open items view removed; v15: Notifications view added
 let state = { view: "domains", domain: DOMAINS[0].id, wf: null, q: "", event: null, nfRecipient: "", nfCategory: "" };
 const layerTag = d => { const m = /Layer (\d+)/.exec(d.layer); return m ? "L" + m[1] : "PL"; };
 const plus = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
@@ -296,6 +296,7 @@ function renderSearch() {
 }
 
 function render() {
+  document.body.dataset.view = state.q.length >= 2 ? "search" : state.view;   // v18: the hero header is shown on the Start here view only
   renderHero();
   renderSpine();
   const c = document.getElementById("content");
@@ -309,8 +310,167 @@ function render() {
   else if (state.view === "notifications") c.innerHTML = renderNotifications();   // v15
   else if (state.view === "notmodeled") c.innerHTML = renderNotModeled();
   else if (state.view === "about") c.innerHTML = renderAbout();
+  else if (state.view === "start") { c.innerHTML = document.getElementById("start-here").innerHTML; startMount(c); }   // v18: hand-written primer from head.html, figures drawn below
   else c.innerHTML = renderDomains() + `<h2 class="docsh">Master docs</h2><p class="asof">${esc(DOC.asof)}</p><div class="docs">${DOCS.map(x => `<a href="${esc(x[1])}" target="_blank" rel="noopener">${tq(x[0])}<small>Claude Doc</small></a>`).join("")}</div>`;
   if (state.wf && !state.q) { const el = document.getElementById("wf-" + state.wf); if (el) el.scrollIntoView({ block: "start" }); }
+}
+
+
+// ---------- v18: Start here figures. Words are in head.html's template; everything drawn here comes from DOC. ----------
+const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wait = ms => new Promise(r => setTimeout(r, REDUCED ? 0 : ms));
+const LAYER_ORDER = ["Platform service", "Layer 0", "Layer 1", "Layer 2", "Layer 3", "Layer 4", "Layer 5", "Layer 6", "Layer 7", "Layer 8", "Layer 9", "Alongside"];
+const LAYER_LABEL = { "Platform service": "Platform", "Layer 0": "Foundation", "Alongside": "Alongside" };
+const layerIdx = d => LAYER_ORDER.indexOf(d.layer);
+function depVerdict(a, b) {
+  if (a.id === b.id) return [false, `A domain does not depend on itself.`];
+  if (b.kind === "Platform" || b.kind === "Foundation") return [true, `<b>Allowed.</b> ${tq(b.name)} is shared: every domain may read it, and it depends on no business domain.`];
+  if (a.kind === "Platform" || a.kind === "Foundation") return [false, `<b>Rejected.</b> ${tq(a.name)} is shared and depends on no business domain; the arrow would point the wrong way.`];
+  if (b.layer === "Alongside") return [false, `<b>Rejected.</b> Nothing in the flow depends on ${tq(b.name)}: advocacy listens to every stage and no stage waits on it.`];
+  if (a.layer === "Alongside") return [true, `<b>Allowed.</b> ${tq(a.name)} may listen to anything in the flow.`];
+  const ia = layerIdx(a), ib = layerIdx(b);
+  if (ib < ia) return [true, `<b>Allowed.</b> ${tq(b.name)} (${tq(b.layer)}) is earlier in the flow than ${tq(a.name)} (${tq(a.layer)}), so the arrow points forward.`];
+  if (ib === ia) return [false, `<b>Rejected.</b> Both sit in ${tq(a.layer)}. Two domains in one layer talk through events, never by depending on each other.`];
+  return [false, `<b>Rejected.</b> ${tq(b.name)} (${tq(b.layer)}) is later in the flow than ${tq(a.name)} (${tq(a.layer)}). That arrow points backward and would make a cycle; the later domain reacts to an event instead.`];
+}
+function figLadder() {
+  const groups = LAYER_ORDER.filter(l => DOMAINS.some(d => d.layer === l));
+  const biz = DOMAINS.filter(d => true);
+  const opts = sel => biz.map(d => `<option value="${d.id}"${d.id === sel ? " selected" : ""}>${tq(d.name)}</option>`).join("");
+  return `<div class="fig ladder" data-fig-ladder>
+    <div class="bar"><span class="cap">May <select data-from>${opts("jobs")}</select> depend on <select data-to>${opts("matching")}</select>?</span><button class="play" data-check>Check</button></div>
+    ${groups.map(l => `<div class="lrow"><span class="lk">${esc(LAYER_LABEL[l] || l)}</span><div class="lcells">${DOMAINS.filter(d => d.layer === l).map(d => `<span class="dm" data-dm="${d.id}" style="--h:${d.hue}"><i></i>${tq(d.name)}<small>${esc(d.type)}</small></span>`).join("")}</div></div>`).join("")}
+    <div class="verdict">Pick two domains and press Check. Arrows may only point to earlier layers or to shared domains.</div>
+    <p style="margin:0;font-size:13px">Type badge: <b>Core</b> is where Aya wins (build and invest), <b>Supporting</b> is Aya-specific (build lean), <b>Generic</b> is commodity (buy or integrate).</p>
+  </div>`;
+}
+const SORT_ITEMS = [
+  ["A worksite's name and address", "fact"], ["Which health screens an Acute Care placement needs", "policy"],
+  ["Acute Care as a worksite's work setting", "fact"], ["An RN license must not expire within 90 days of start", "policy"],
+  ["A profession's scope of practice", "fact"], ["Who at a client approves a job before it is released", "policy"]
+];
+function figSorter() {
+  return `<div class="fig" data-fig-sorter><div class="bar"><span class="cap">Six records. Which are facts and which are policies?</span><button class="play" data-sort>Sort them</button><button class="play" data-unsort>Reset</button></div>
+  <div class="sorter"><div class="pile">${SORT_ITEMS.map((it, i) => `<span class="it" data-i="${i}">${tq(it[0])}</span>`).join("")}</div>
+  <div class="bin" data-bin="fact"><h3>Facts<small>live in Foundational Data; many domains read them, none changes them</small></h3></div>
+  <div class="bin" data-bin="policy"><h3>Policies<small>live with the workflow that enforces them (Jobs, Client Contracts & Account, Compliance)</small></h3></div></div></div>`;
+}
+function figVerbs() {
+  const steps = [
+    ["Asks for data", `the talent: which stipend split, which days off`],
+    ["Checks against rules", `the terms against the client contract and the person's stated needs`],
+    ["Hands a decision to a person", `the talent asks for more than the rule allows, so a person decides <span class="hp">Pending human</span>`],
+    ["Moves its record", `the Offer <span class="st">Presented</span> → <span class="st to">Accepted</span>`],
+    ["Announces", `<span class="evx">Offer Accepted</span> so Agreement Generation can start`]
+  ];
+  return `<div class="fig" data-fig-verbs><div class="bar"><span class="cap">Offer Out, one offer, start to finish.</span><button class="play" data-verbs>Play</button></div>
+  <div class="verbs">${steps.map((x, i) => `<div class="vb" data-vb="${i}"><b>${i + 1}. ${x[0]}</b><span>${x[1]}</span></div>`).join("")}</div></div>`;
+}
+function figStates() {
+  const row = RECORDS.find(r => r[0] === "Assignment"); const sts = row ? statesOf(row) : ["Scheduled", "Started", "Blocked", "Ending", "Ended", "Cancelled"];
+  return `<div class="fig" data-fig-states><div class="bar"><span class="cap">The Assignment record's states, from the Doc. Click one.</span></div>
+  <div class="strip">${sts.map(s => `<span class="st" data-st="${esc(s)}" tabindex="0">${esc(s)}</span>`).join("")}</div><div data-sdetail></div></div>`;
+}
+function statesOf(row) {  // the chip list tail.js already draws on the Records view
+  const m = /(?:^|\. )((?:[A-Z][\w-]*(?: [A-Z][\w-]*){0,3}(?:, | or )?){3,})\./.exec(row[3].replace(/\s*\([^()]*\)/g, ""));
+  if (!m) return [];
+  return m[1].split(/, | or /).map(s => s.trim()).filter(s => /^[A-Z]/.test(s));
+}
+function figTwo() {
+  return `<div class="fig"><div class="two"><div class="rc"><b>Assignment</b><span class="st">Started</span><div style="font-size:13px;margin-top:6px">13-week ICU contract, week 9</div></div><div class="who">one person</div><div class="rc"><b>Candidacy</b><span class="st">Submitted</span><div style="font-size:13px;margin-top:6px">the next job, submitted to the client</div></div></div></div>`;
+}
+const STEPS = [["Submitted to Client", "Candidacy Created"], ["Offer", "Candidacy Selected"], ["Employment Agreement", "Offer Accepted"], ["Compliance", "Agreement Signed"], ["Payroll", "Agreement Signed"]];
+const NEW_STEP = ["Interview", "Client Status Changed (Interview)"];
+function figEvents() {
+  return `<div class="fig" data-fig-events><div class="bar"><span class="cap">Five pieces of work, two ways. Add Interview to both, then run a placement where the client selects without interviewing.</span><button class="play" data-add>Add Interview</button><button class="play" data-run>Run</button><button class="play" data-reset>Reset</button></div>
+  <div class="cve"><div><h3>A chain: each step calls the next</h3><div class="chain" data-chain>${STEPS.map((n, i) => `${i ? `<span class="ar">→</span>` : ""}<span class="nd" data-ch>${esc(n[0])}</span>`).join("")}</div><div class="note" data-note-ch>&nbsp;</div><div class="count" data-count-ch>&nbsp;</div></div>
+  <div><h3>Events: each piece listens for a fact</h3><div class="evs" data-evs>${STEPS.map(n => `<span class="nd" data-l>${esc(n[0])}<small>listens for ${esc(n[1])}</small></span>`).join("")}</div><div class="note" data-note-ev>&nbsp;</div><div class="count" data-count-ev>&nbsp;</div></div></div></div>`;
+}
+const VIEW_CARDS = [["domains", "Domains", "every workflow card; click an event chip to see who listens"], ["records", "Records", "every record, its states and transitions"], ["rules", "Rules", "the nine rules and the Work Classification inputs"], ["humans", "Humans", "every place a person decides, with role and deadline"], ["notifications", "Notifications", "every message Helix sends, and its trigger"], ["notmodeled", "Not modeled", "what Helix has not taken on, and what would bring it in"]];
+function figViews() { return `<div class="views">${VIEW_CARDS.map(v => `<button data-view-go="${v[0]}">${v[1]}<small>${v[2]}</small></button>`).join("")}</div>`; }
+
+function startMount(c) {
+  const put = (k, html) => { const el = c.querySelector(`[data-fig="${k}"]`); if (el) el.outerHTML = html; };
+  put("ladder", figLadder()); put("sorter", figSorter()); put("verbs", figVerbs()); put("states", figStates()); put("two", figTwo()); put("events", figEvents()); put("views", figViews());
+  // ladder
+  const lad = c.querySelector("[data-fig-ladder]");
+  if (lad) lad.querySelector("[data-check]").onclick = () => {
+    const a = DOMAINS.find(d => d.id === lad.querySelector("[data-from]").value), b = DOMAINS.find(d => d.id === lad.querySelector("[data-to]").value);
+    lad.querySelectorAll(".dm").forEach(x => x.classList.remove("from", "to", "ok", "bad"));
+    const [ok, text] = depVerdict(a, b);
+    lad.querySelector(`[data-dm="${a.id}"]`).classList.add("from"); lad.querySelector(`[data-dm="${b.id}"]`).classList.add("to", ok ? "ok" : "bad");
+    const v = lad.querySelector(".verdict"); v.className = "verdict " + (ok ? "ok" : "bad"); v.innerHTML = text;
+  };
+  // sorter
+  const so = c.querySelector("[data-fig-sorter]");
+  if (so) {
+    so.querySelector("[data-sort]").onclick = async () => { so.querySelector("[data-sort]").classList.add("done");
+      for (const it of [...so.querySelectorAll(".it")]) { const k = SORT_ITEMS[+it.dataset.i][1]; it.style.opacity = 0; await wait(120); so.querySelector(`[data-bin="${k}"]`).appendChild(it); it.classList.add(k); it.style.opacity = 1; await wait(160); }
+    };
+    so.querySelector("[data-unsort]").onclick = () => { so.querySelector("[data-sort]").classList.remove("done"); const pile = so.querySelector(".pile"); [...so.querySelectorAll(".it")].sort((x, y) => x.dataset.i - y.dataset.i).forEach(it => { it.className = "it"; it.style.opacity = 1; pile.appendChild(it); }); };
+  }
+  // five verbs
+  const vf = c.querySelector("[data-fig-verbs]");
+  if (vf) vf.querySelector("[data-verbs]").onclick = async () => { vf.querySelector("[data-verbs]").classList.add("done"); const cards = vf.querySelectorAll(".vb"); cards.forEach(x => x.classList.remove("on")); for (const x of cards) { x.classList.add("on"); await wait(1300); } };
+  // states: click a chip, see the rows of the Assignment table that enter and leave it
+  const sf = c.querySelector("[data-fig-states]");
+  if (sf) sf.querySelectorAll(".st").forEach(ch => ch.onclick = () => {
+    const st = ch.dataset.st, rows = ((DOC.rules.transitions || {}).records || {})["Assignment"] || [];
+    sf.querySelectorAll(".st").forEach(x => x.classList.toggle("on", x === ch));
+    const li = (r, dir) => `<li>${dir === "in" ? (r[0] ? `from <span class="st">${esc(r[0])}</span>` : "created") : `to <span class="st">${esc(r[1])}</span>`} when ${tq(r[3].replace(/\s*\([^()]*\)/g, ""))}</li>`;
+    const ins = rows.filter(r => r[1] === st), outs = rows.filter(r => r[0] === st);
+    sf.querySelector("[data-sdetail]").innerHTML = `<div class="sdetail"><div><h4>How it gets to ${esc(st)}</h4>${ins.length ? `<ul>${ins.map(r => li(r, "in")).join("")}</ul>` : "Nothing moves it here."}</div><div><h4>Where it goes from ${esc(st)}</h4>${outs.length ? `<ul>${outs.map(r => li(r, "out")).join("")}</ul>` : "Nowhere: this state is final."}</div></div>`;
+  });
+  // events: adding Interview to a chain versus to a listener set, then running a placement with no interview
+  const ef = c.querySelector("[data-fig-events]");
+  if (ef) {
+    const base = ef.innerHTML;
+    let added = false;
+    const q = s => ef.querySelector(s), qa = s => [...ef.querySelectorAll(s)];
+    const add = async () => {
+      if (added) return; added = true; q("[data-add]").classList.add("done");
+      const chain = q("[data-chain]"), nodes = qa("[data-ch]"), ars = qa(".chain .ar");
+      ars[0].classList.add("cut"); nodes[0].classList.add("edit"); nodes[1].classList.add("edit");
+      q("[data-note-ch]").textContent = "Submitted to Client used to call Offer; that link is cut";
+      await wait(1100);
+      const nn = document.createElement("span"); nn.className = "nd new"; nn.setAttribute("data-ch", ""); nn.textContent = NEW_STEP[0];
+      const a1 = document.createElement("span"); a1.className = "ar new"; a1.textContent = "→";
+      ars[0].classList.remove("cut"); ars[0].classList.add("new");
+      chain.insertBefore(nn, nodes[1]); chain.insertBefore(a1, nodes[1]);
+      q("[data-note-ch]").textContent = "Submitted to Client now calls Interview; Interview must call Offer";
+      q("[data-count-ch]").textContent = "3 things changed, and every placement now goes through Interview, whether or not the client wants one";
+      await wait(500);
+      const ln = document.createElement("span"); ln.className = "nd new"; ln.setAttribute("data-l", ""); ln.innerHTML = `${esc(NEW_STEP[0])}<small>listens for ${esc(NEW_STEP[1])}</small>`; q("[data-evs]").appendChild(ln);
+      q("[data-note-ev]").textContent = "Interview listens for the client asking for one. Offer still listens for Candidacy Selected; nothing else was touched.";
+      q("[data-count-ev]").textContent = "1 thing changed, and it runs only when a client asks";
+    };
+    const run = async () => {
+      const nodes = qa("[data-ch]"), lsn = qa("[data-l]");
+      nodes.forEach(x => { x.classList.remove("lit", "stall", "skip"); x.classList.add("wait"); }); lsn.forEach(x => { x.classList.remove("lit", "skip"); x.classList.add("wait"); });
+      q("[data-note-ch]").textContent = "the client selects straight from the submittal"; q("[data-note-ev]").textContent = "the client selects straight from the submittal";
+      // events side: facts arrive; each listener lights when its fact does; Compliance and Payroll together
+      const byName = n => lsn.find(x => x.firstChild.textContent === n);
+      const evRun = (async () => {
+        for (const ev of ["Candidacy Created", "Candidacy Selected", "Offer Accepted", "Agreement Signed"]) {
+          lsn.filter(x => x.querySelector("small").textContent.endsWith(ev)).forEach(x => { x.classList.remove("wait"); x.classList.add("lit"); });
+          await wait(650);
+        }
+        const iv = byName("Interview"); if (iv) { iv.classList.remove("wait"); iv.classList.add("skip"); q("[data-note-ev]").textContent = "no interview was asked for: Interview never ran, and nothing waited for it"; }
+        else q("[data-note-ev]").textContent = "Compliance and Payroll started together on Agreement Signed";
+      })();
+      for (let i = 0; i < nodes.length; i++) {
+        nodes[i].classList.remove("wait"); nodes[i].classList.add("lit");
+        if (nodes[i].textContent === "Interview") { nodes[i].classList.add("stall"); q("[data-note-ch]").textContent = "Interview runs anyway, and Offer waits until it is done"; await wait(1500); nodes[i].classList.remove("stall"); }
+        await wait(500);
+      }
+      q("[data-note-ch]").textContent = added ? "done, one step at a time, with a step nobody asked for" : "done, one step at a time";
+      await evRun;
+    };
+    const reset = () => { ef.innerHTML = base; added = false; wire(); };
+    const wire = () => { q("[data-add]").onclick = add; q("[data-run]").onclick = run; q("[data-reset]").onclick = reset; };
+    wire();
+  }
+  c.querySelectorAll("[data-view-go]").forEach(b => b.onclick = () => { go(b.dataset.viewGo === "domains" ? state.domain : b.dataset.viewGo); document.getElementById("content").scrollIntoView({ block: "start" }); });
 }
 
 document.addEventListener("click", e => {
@@ -318,10 +478,17 @@ document.addEventListener("click", e => {
   const v = e.target.closest("nav.views button"); if (v) { state.q = ""; document.getElementById("q").value = ""; go(v.dataset.view === "domains" ? state.domain : v.dataset.view); document.getElementById("content").scrollIntoView({ block: "start" }); return; }
   const h = e.target.closest("button.hd"); if (h) { const s = h.parentElement; const open = !s.hasAttribute("open"); s.toggleAttribute("open", open); h.setAttribute("aria-expanded", open); if (open && !state.q) { state.wf = h.dataset.wf; history.replaceState(null, "", "#" + state.wf); } return; }
   const nf = e.target.closest("button.nf"); if (nf) { state[nf.dataset.nf] = nf.dataset.v; render(); return; }   // v15: register filters
-  const ev = e.target.closest(".ev"); if (ev) { state.event = ev.dataset.ev; state.q = ""; document.getElementById("q").value = ""; render(); document.querySelector(".evpanel").scrollIntoView({ block: "start" }); return; }
+  const ev = e.target.closest(".ev"); if (ev) {
+    state.event = ev.dataset.ev; state.q = ""; document.getElementById("q").value = "";
+    if (state.view !== "domains") {   // v18: an event chip outside the Domains view (the Start here primer) opens the panel on the emitter's domain
+      const em = WF.find(w => w.emits.some(x => x.replace(/\s*\(.*\)$/, "") === state.event));
+      state.view = "domains"; state.domain = em ? em.domain.id : state.domain; state.wf = null;
+      history.replaceState(null, "", "#" + state.domain);
+    }
+    render(); const pnl = document.querySelector(".evpanel"); if (pnl) pnl.scrollIntoView({ block: "start" }); return; }
   if (e.target.closest("[data-close]")) { state.event = null; render(); }
 });
-document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.classList.contains("ev")) e.target.click(); });
+document.addEventListener("keydown", e => { if (e.key === "Enter" && (e.target.classList.contains("ev") || e.target.classList.contains("st"))) e.target.click(); });
 document.getElementById("q").addEventListener("input", e => { state.q = e.target.value.trim(); render(); });
 window.addEventListener("hashchange", route);
 // v9: remember whether the viewer collapsed the flow strip (per browser; storage may be unavailable).

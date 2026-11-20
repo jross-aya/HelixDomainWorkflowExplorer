@@ -76,6 +76,8 @@ nav.views button[aria-current="page"]{background:var(--violet);border-color:var(
 @keyframes hxd4{from{transform:translate(0,0)}to{transform:translate(-24%,-30%) scale(1.3)}}
 @media (prefers-reduced-motion:reduce){.hero .aur i{animation:none}.flow .fd{transition:none}}
 .hero-head{display:grid;gap:14px;max-width:860px}
+body:not([data-view="start"]) .hero-head{display:none}   /* v18: the page header shows on the Start here view only */
+body:not([data-view="start"]) .hero{padding-top:12px}
 .hero h1{font-size:clamp(36px,5.6vw,72px);font-weight:800;letter-spacing:-.035em;line-height:1.12}
 .hero h1 .line{display:block;padding-bottom:.06em}
 .hero .lede{font-size:clamp(16px,1.3vw,19px);color:var(--muted);max-width:66ch}
@@ -306,12 +308,121 @@ button.nf[aria-pressed="true"]{background:var(--violet);border-color:var(--viole
 .grid dd .hpts li{color:var(--muted)}
 .grid dd .hpts li .rsn{margin-left:6px}
 .hits{margin:0 0 14px;font:500 12px var(--mono);color:var(--muted);letter-spacing:.04em}
+/* v18: Start here view. The words live in the start-here template below (hand-written, like the hero lede); the figures are drawn by tail.js from the Doc. */
+.start{max-width:1040px;display:grid;gap:34px}
+.start p,.start .ex{max-width:78ch}
+.start h2{font:700 22px var(--display);letter-spacing:-.015em;margin:0 0 8px}
+.start p{color:var(--muted);font-size:16px;line-height:1.6;margin:0 0 12px}
+.start p b{color:var(--fg)}
+.start .fig{border:1px solid var(--line);border-radius:16px;background:var(--bg2);padding:16px 18px;margin:0 0 12px;display:grid;gap:12px}
+.start .fig .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.start .fig .bar .cap{font:600 14px var(--body);color:var(--fg);flex:1 1 20ch;min-height:1.4em;padding-left:10px;border-left:3px solid var(--violet)}
+.start .fig .bar .cap select{font-weight:600}
+.start button.play{font:600 13px var(--body);color:var(--fg);background:var(--bg3);border:1px solid var(--line2);border-radius:999px;padding:7px 14px;cursor:pointer}
+.start button.play:hover{border-color:var(--violet)}
+.start button.play.done{color:var(--ink-on-accent);background:var(--violet);border-color:var(--violet)}
+.start select{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line2);border-radius:999px;background:var(--bg2);color:var(--fg)}
+.start .tests{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;max-width:none}
+.start .tests div{padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--bg2);font-size:14px;color:var(--muted)}
+.start .tests b{display:block;color:var(--fg);margin-bottom:4px;font-family:var(--display)}
+/* layer ladder */
+.ladder{display:grid;gap:6px}
+.ladder .lrow{display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;align-items:center}
+.ladder .lk{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ladder .lcells{display:flex;flex-wrap:wrap;gap:6px}
+.ladder .dm{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border-radius:999px;border:1px solid var(--line2);background:var(--bg3);font:600 13px var(--body);color:var(--fg);transition:box-shadow .25s,border-color .25s,background .25s}
+.ladder .dm i{width:8px;height:8px;border-radius:2px;transform:rotate(45deg);background:hsl(var(--h) var(--sat) var(--lt));flex:none}
+.ladder .dm small{font:500 10px var(--mono);letter-spacing:.08em;color:var(--muted)}
+.ladder .dm.from{border-color:var(--violet);box-shadow:0 0 0 3px var(--glow)}
+.ladder .dm.to.ok{border-color:var(--aqua);background:color-mix(in oklab,var(--aqua) 16%,transparent)}
+.ladder .dm.to.bad{border-color:var(--coral);background:color-mix(in oklab,var(--coral) 16%,transparent)}
+.ladder .verdict{font-size:14px;color:var(--muted);padding:10px 12px;border-radius:12px;background:var(--bg3);border-left:3px solid var(--line2);min-height:2.4em}
+.ladder .verdict.ok{border-left-color:var(--aqua)}
+.ladder .verdict.bad{border-left-color:var(--coral)}
+.ladder .verdict b{color:var(--fg)}
+/* facts vs policies sorter */
+.sorter{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sorter .bin{border:1px dashed var(--line2);border-radius:14px;padding:10px 12px;min-height:150px;display:grid;align-content:start;gap:6px}
+.sorter .bin h3{font:600 13px var(--display);margin:0 0 4px;color:var(--fg)}
+.sorter .bin h3 small{display:block;font:500 11px var(--mono);letter-spacing:.06em;color:var(--muted);text-transform:none}
+.sorter .pile{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.sorter .it{font-size:13.5px;padding:6px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--line);color:var(--fg);transition:transform .35s,opacity .35s}
+.sorter .it.fact{border-color:var(--aqua)} .sorter .it.policy{border-color:var(--amber)}
+.sorter .q{grid-column:1/-1;font-size:14px;color:var(--muted);font-style:italic}
+@media (max-width:620px){.sorter{grid-template-columns:1fr}}
+
+/* five verbs */
+.verbs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:760px){.verbs{grid-template-columns:1fr 1fr}}
+.verbs .vb{padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg3);opacity:.45;transition:opacity .3s,border-color .3s,box-shadow .3s;min-height:96px}
+.verbs .vb b{display:block;font:700 13px var(--display);color:var(--fg);margin-bottom:4px}
+.verbs .vb span{font-size:13px;color:var(--muted);display:block}
+.verbs .vb.on{opacity:1;border-color:var(--violet);box-shadow:0 0 0 3px var(--glow)}
+.verbs .vb .st{display:inline-block;font:600 11px var(--mono);padding:1px 7px;border-radius:999px;border:1px solid var(--line2);color:var(--fg);margin-top:4px}
+.verbs .vb .st.to{border-color:var(--violet)}
+.verbs .vb .hp{display:inline-block;font:600 11px var(--mono);padding:1px 8px;border-radius:999px;border:1px solid var(--amber);color:var(--amber);margin-top:4px}
+.verbs .vb .evx{margin-top:4px}
+.verbs .evx{display:inline-block;font:500 12px var(--mono);padding:3px 9px;border-radius:7px;background:color-mix(in oklab,var(--violet) 14%,transparent);color:var(--fg)}
+/* events side of the chain figure: each box says what it listens for */
+.evs{display:flex;flex-wrap:wrap;gap:8px}
+.evs .nd{display:grid;gap:2px}
+.evs .nd small{font:500 10.5px var(--mono);color:var(--muted);letter-spacing:.03em}
+.cve .nd.skip{opacity:.4;border-style:dotted}
+/* state strip */
+.strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.strip .st{font:600 12px var(--mono);padding:4px 11px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);background:var(--bg3);transition:all .3s}
+.strip .st.on{border-color:var(--violet);background:var(--violet);color:#fff;box-shadow:0 0 0 3px var(--glow)}
+.strip .st.was{border-color:var(--violet);color:var(--fg)}
+.strip .arr{color:var(--muted);font-size:12px}
+.strip .evl{font:500 12px var(--mono);color:var(--violet);min-width:14ch}
+.two{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;max-width:70ch}
+.two .rc{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--bg3)}
+.two .rc b{display:block;font-family:var(--display);color:var(--fg);margin-bottom:4px}
+.two .rc .st{display:inline-block;font:600 12px var(--mono);padding:3px 10px;border-radius:999px;border:1px solid var(--violet);color:var(--fg)}
+.two .who{font:500 11px var(--mono);letter-spacing:.08em;color:var(--muted);text-align:center;white-space:nowrap}
+@media (max-width:620px){.two{grid-template-columns:1fr}.two .who{text-align:left}}
+/* chain vs events */
+.cve{display:grid;grid-template-columns:1fr 1.25fr;gap:16px}
+@media (max-width:760px){.cve{grid-template-columns:1fr}}
+.cve h3{font:700 15px var(--display);margin:0 0 10px;color:var(--fg)}
+.cve .nd{font:600 13.5px var(--body);padding:7px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--bg3);color:var(--fg);transition:background .3s,border-color .3s,box-shadow .3s,opacity .3s}
+.cve .nd.lit{border-color:var(--aqua);background:color-mix(in oklab,var(--aqua) 18%,transparent)}
+.cve .nd.stall{border-color:var(--coral);background:color-mix(in oklab,var(--coral) 18%,transparent)}
+.cve .nd.wait{opacity:.45}
+.cve .nd.new{border-style:dashed;border-color:var(--aqua);color:var(--aqua)}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.chain .ar{color:var(--muted)}
+.chain .ar.stall{color:var(--coral)}
+.cve .note{font:500 12px var(--mono);color:var(--muted);margin-top:10px;min-height:1.4em}
+.fan{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center}
+.fan .pill{font:600 14px var(--mono);padding:8px 14px;border-radius:999px;background:var(--violet);color:#fff;cursor:pointer;border:0;transition:transform .3s,box-shadow .3s}
+.fan .pill.pulse{transform:scale(1.06);box-shadow:0 0 0 8px var(--glow)}
+.fan .ls{display:flex;flex-wrap:wrap;gap:6px}
+.fan .ls .nd{font-size:13px}
+.start .views{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;max-width:none}
+.start .views button{text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg2);color:var(--fg);cursor:pointer;font:600 14px var(--body)}
+.start .views button small{display:block;font:400 12.5px var(--body);color:var(--muted);margin-top:2px}
+.start .views button:hover{border-color:var(--violet)}
+
+.cve .nd.edit{border-color:var(--amber);background:color-mix(in oklab,var(--amber) 18%,transparent)}
+.cve .ar.cut{color:var(--coral);text-decoration:line-through}
+.cve .ar.new{color:var(--aqua)}
+.cve .count{font:600 13px var(--display);color:var(--fg);margin-top:8px}
+.strip .st{cursor:pointer}
+.sdetail{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px;color:var(--muted)}
+.sdetail div{padding:10px 12px;border-radius:12px;background:var(--bg3);border:1px solid var(--line)}
+.sdetail h4{margin:0 0 6px;font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--violet)}
+.sdetail ul{margin:0;padding-left:16px;display:grid;gap:4px}
+.sdetail .st{font:600 11px var(--mono);padding:1px 7px;border-radius:999px;border:1px solid var(--line2);color:var(--fg)}
+@media (max-width:620px){.sdetail{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.start *{transition:none!important}}
 </style>
 </head>
 <body>
 <header class="top"><div class="topin">
   <a class="brand" href="#"><span class="mark"></span>Helix Domains &amp; Workflows<small>explorer</small></a>
   <nav class="views" aria-label="Views">
+    <button data-view="start">Start here</button>
     <button data-view="domains">Domains</button>
     <button data-view="records">Records</button>
     <button data-view="rules">Rules</button>
@@ -328,7 +439,7 @@ button.nf[aria-pressed="true"]{background:var(--violet);border-color:var(--viole
   <div class="hero-head">
     <p class="k" id="eyebrow">Helix is Aya · Last updated November 4, 2026</p>
     <h1><span class="line">What Helix does,</span><span class="line grad">and which domain owns it.</span></h1>
-    <p class="lede" id="lede"><b>Helix is Aya.</b> Helix is its own platform beside Aya’s systems (CoreAPI, Nova), but it operates as Aya: Aya stays the employer of record, holds the client contracts, bills clients, and pays talent, so a Helix placement looks like any other Aya placement to a client or a clinician. Helix reaches Aya’s systems only through Integration Hub, and is expected to replace them over time, not soon. <b>Scoped in:</b> Travel, Per Diem, WFD, Locums, Perm, and Local Long Term; IRP is Per Diem × client-employed. Interim Leadership and Education map to Travel (Education is the School work setting); Government is a client sector on the worksite, not a type. <b>Scoped out for now:</b> see the Not modeled view.</p>
+    <p class="lede" id="lede"><b>Helix is Aya.</b> Helix is its own platform beside Aya’s systems (CoreAPI, Nova), but it operates as Aya: Aya stays the employer of record, holds the client contracts, bills clients, and pays talent, so a Helix placement looks like any other Aya placement to a client or a clinician. Helix reaches Aya’s systems only through Integration Hub, and is expected to replace them over time, not soon. <b>Scoped in:</b> Travel, Per Diem, WFD, Locums, Perm, and Local Long Term; IRP is Per Diem × client-employed. Interim Leadership and Education map to Travel (Education is the School work setting); Government is a client sector on the worksite, not a type. <b>Scoped out for now:</b> see the Not modeled view. New to this page? <a href="#start">Start here</a>.</p>
     <div class="stats" id="stats"></div>
   </div>
   <details class="flowwrap" id="flowwrap" open>
@@ -336,6 +447,43 @@ button.nf[aria-pressed="true"]{background:var(--violet);border-color:var(--viole
     <div class="flow" id="flow"></div>
   </details>
 </section>
+
+<!-- v18: the Start here primer. The words here are hand-written, like the hero lede; each [data-fig] is drawn by tail.js from the Doc. -->
+<template id="start-here">
+<div class="dhead"><h1>How to read this map</h1><p class="lead">Helix is a new, AI-native platform. This page is the map of it, built from the documents engineering builds from. Four ideas carry the whole thing: domains, workflows, records, events. Press play on each.</p></div>
+<div class="start">
+<section>
+<h2>1. A domain owns its facts, and the boundaries are not drawn by taste</h2>
+<p>The business is cut into parts. Each part owns the facts it is the authority on and nothing else: Jobs owns job orders, Compliance owns who is cleared where, Finance owns time and pay. Three tests decide where a cut goes.</p>
+<div class="tests"><div><b>High cohesion</b>Things that change together live together. Time, payroll and billing are one domain, not three.</div><div><b>Low coupling</b>Parts talk only through events and read-only copies, never by reaching into each other's records.</div><div><b>No cycles</b>A domain may depend only on domains earlier in the flow. Try one below.</div></div>
+<div data-fig="ladder"></div>
+<p>The fourth test is facts versus policies. A fact is what something is; a policy is what must happen to it. Facts live in Foundational Data; a policy lives with the workflow that enforces it. The question that sorts them: can you understand this record without knowing what any system does with it?</p>
+<div data-fig="sorter"></div>
+</section>
+<section>
+<h2>2. A workflow answers one question</h2>
+<p>A workflow does five kinds of thing, and nothing else. It <b>asks for data</b> from a person, a client or a system. It <b>checks</b> that data against rules, where law beats a Helix standard and a Helix standard beats a contract term. It <b>hands a decision to a person</b> when a rule cannot make it, and the record waits in a Pending human step with a role, a reason and a deadline. It <b>moves its record</b> to the next state. And it <b>announces</b> what happened, so the rest of Helix can react. Every task on every card is one of those five. Play Offer Out.</p>
+<div data-fig="verbs"></div>
+</section>
+<section>
+<h2>3. A record is always in exactly one state</h2>
+<p>A Job, a Candidacy, an Offer, an Agreement, an Assignment. Each is in one state at a time, the state is the fact, and only its owning workflow moves it, on an event, with the move recorded. Click a state of the Assignment to see what moves it there and what moves it on.</p>
+<div data-fig="states"></div>
+<p>Two records, one person: on assignment and submitted to the next job at the same time is not a contradiction.</p>
+<div data-fig="two"></div>
+</section>
+<section>
+<h2>4. Events are how the parts talk, and why it is not a chain</h2>
+<p>When a workflow changes a state it announces the fact: Agreement Signed, Compliance Cleared, Start Confirmed. It does not call the next step. Whoever cares listens. Below, the same five pieces of work two ways. Now the business adds a step, Interview. Add it both ways.</p>
+<div data-fig="events"></div>
+<p>In the chain, adding Interview changes three things and makes every placement pass through it, even for a client that selects straight from the submittal. With events, it changes one thing, runs only when a client asks for an interview, and nothing waits for it. The price is one name per fact, everywhere.</p>
+</section>
+<section>
+<h2>Where to go next</h2>
+<div data-fig="views"></div>
+</section>
+</div>
+</template>
 <main>
   <aside class="rail" id="spine"></aside>
   <div class="content" id="content"></div>
