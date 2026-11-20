@@ -325,13 +325,13 @@ const layerIdx = d => LAYER_ORDER.indexOf(d.layer);
 function depVerdict(a, b) {
   if (a.id === b.id) return [false, `A domain does not depend on itself.`];
   if (b.kind === "Platform" || b.kind === "Foundation") return [true, `<b>Allowed.</b> ${tq(b.name)} is shared: every domain may read it, and it depends on no business domain.`];
-  if (a.kind === "Platform" || a.kind === "Foundation") return [false, `<b>Rejected.</b> ${tq(a.name)} is shared and depends on no business domain; the arrow would point the wrong way.`];
+  if (a.kind === "Platform" || a.kind === "Foundation") return [false, `<b>Rejected.</b> ${tq(a.name)} is shared and depends on no business domain; the dependency would point the wrong way.`];
   if (b.layer === "Alongside") return [false, `<b>Rejected.</b> Nothing in the flow depends on ${tq(b.name)}: advocacy listens to every stage and no stage waits on it.`];
   if (a.layer === "Alongside") return [true, `<b>Allowed.</b> ${tq(a.name)} may listen to anything in the flow.`];
   const ia = layerIdx(a), ib = layerIdx(b);
-  if (ib < ia) return [true, `<b>Allowed.</b> ${tq(b.name)} (${tq(b.layer)}) is earlier in the flow than ${tq(a.name)} (${tq(a.layer)}), so the arrow points forward.`];
+  if (ib < ia) return [true, `<b>Allowed.</b> ${tq(b.name)} (${tq(b.layer)}) is earlier in the flow than ${tq(a.name)} (${tq(a.layer)}), so the dependency points forward.`];
   if (ib === ia) return [false, `<b>Rejected.</b> Both sit in ${tq(a.layer)}. Two domains in one layer talk through events, never by depending on each other.`];
-  return [false, `<b>Rejected.</b> ${tq(b.name)} (${tq(b.layer)}) is later in the flow than ${tq(a.name)} (${tq(a.layer)}). That arrow points backward and would make a cycle; the later domain reacts to an event instead.`];
+  return [false, `<b>Rejected.</b> ${tq(b.name)} (${tq(b.layer)}) is later in the flow than ${tq(a.name)} (${tq(a.layer)}). That dependency points backward and would make a cycle; the later domain reacts to an event instead.`];
 }
 function figLadder() {
   const groups = LAYER_ORDER.filter(l => DOMAINS.some(d => d.layer === l));
@@ -340,13 +340,13 @@ function figLadder() {
   return `<div class="fig ladder" data-fig-ladder>
     <div class="bar"><span class="cap">May <select data-from>${opts("jobs")}</select> depend on <select data-to>${opts("matching")}</select>?</span><button class="play" data-check>Check</button></div>
     ${groups.map(l => `<div class="lrow"><span class="lk">${esc(LAYER_LABEL[l] || l)}</span><div class="lcells">${DOMAINS.filter(d => d.layer === l).map(d => `<span class="dm" data-dm="${d.id}" style="--h:${d.hue}"><i></i>${tq(d.name)}<small>${esc(d.type)}</small></span>`).join("")}</div></div>`).join("")}
-    <div class="verdict">Pick two domains and press Check. Arrows may only point to earlier layers or to shared domains.</div>
+    <div class="verdict">Pick two domains and press Check. A domain may depend only on one earlier in the flow, or on a shared one.</div>
     <p style="margin:0;font-size:13px">Type badge: <b>Core</b> is where Aya wins (build and invest), <b>Supporting</b> is Aya-specific (build lean), <b>Generic</b> is commodity (buy or integrate).</p>
   </div>`;
 }
 const SORT_ITEMS = [
   ["A worksite's name and address", "fact"], ["Which health screens an Acute Care placement needs", "policy"],
-  ["Acute Care as a worksite's work setting", "fact"], ["An RN license must not expire within 90 days of start", "policy"],
+  ["That a worksite's setting is Acute Care", "fact"], ["An RN license must not expire within 90 days of start", "policy"],
   ["A profession's scope of practice", "fact"], ["Who at a client approves a job before it is released", "policy"]
 ];
 function figSorter() {
@@ -357,18 +357,18 @@ function figSorter() {
 }
 function figVerbs() {
   const steps = [
-    ["Asks for data", `the talent: which stipend split, which days off`],
-    ["Checks against rules", `the terms against the client contract and the person's stated needs`],
+    ["Asks for data", `asks the talent which stipend split and which days off they want`],
+    ["Checks against rules", `checks those answers against the client contract and the talent's needs`],
     ["Hands a decision to a person", `the talent asks for more than the rule allows, so a person decides <span class="hp">Pending human</span>`],
-    ["Moves its record", `the Offer <span class="st">Presented</span> → <span class="st to">Accepted</span>`],
-    ["Announces", `<span class="evx">Offer Accepted</span> so Agreement Generation can start`]
+    ["Moves its record", `moves the Offer from <span class="st">Presented</span> to <span class="st to">Accepted</span>`],
+    ["Announces", `announces <span class="evx">Offer Accepted</span>, so the next workflow, Agreement Generation, can start`]
   ];
   return `<div class="fig" data-fig-verbs><div class="bar"><span class="cap">Offer Out, one offer, start to finish.</span><button class="play" data-verbs>Play</button></div>
   <div class="verbs">${steps.map((x, i) => `<div class="vb" data-vb="${i}"><b>${i + 1}. ${x[0]}</b><span>${x[1]}</span></div>`).join("")}</div></div>`;
 }
 function figStates() {
   const row = RECORDS.find(r => r[0] === "Assignment"); const sts = row ? statesOf(row) : ["Scheduled", "Started", "Blocked", "Ending", "Ended", "Cancelled"];
-  return `<div class="fig" data-fig-states><div class="bar"><span class="cap">The Assignment record's states, from the Doc. Click one.</span></div>
+  return `<div class="fig" data-fig-states><div class="bar"><span class="cap">The Assignment record's states, from the master Doc. Click one.</span></div>
   <div class="strip">${sts.map(s => `<span class="st" data-st="${esc(s)}" tabindex="0">${esc(s)}</span>`).join("")}</div><div data-sdetail></div></div>`;
 }
 function statesOf(row) {  // the chip list tail.js already draws on the Records view
@@ -382,11 +382,11 @@ function figTwo() {
 const STEPS = [["Submitted to Client", "Candidacy Created"], ["Offer", "Candidacy Selected"], ["Employment Agreement", "Offer Accepted"], ["Compliance", "Agreement Signed"], ["Payroll", "Agreement Signed"]];
 const NEW_STEP = ["Interview", "Client Status Changed (Interview)"];
 function figEvents() {
-  return `<div class="fig" data-fig-events><div class="bar"><span class="cap">Five pieces of work, two ways. Add Interview to both, then run a placement where the client selects without interviewing.</span><button class="play" data-add>Add Interview</button><button class="play" data-run>Run</button><button class="play" data-reset>Reset</button></div>
+  return `<div class="fig" data-fig-events><div class="bar"><span class="cap">Five pieces of work, two ways. Add Interview to both, then run a placement where the client selects the talent without an interview.</span><button class="play" data-add>Add Interview</button><button class="play" data-run>Run</button><button class="play" data-reset>Reset</button></div>
   <div class="cve"><div><h3>A chain: each step calls the next</h3><div class="chain" data-chain>${STEPS.map((n, i) => `${i ? `<span class="ar">→</span>` : ""}<span class="nd" data-ch>${esc(n[0])}</span>`).join("")}</div><div class="note" data-note-ch>&nbsp;</div><div class="count" data-count-ch>&nbsp;</div></div>
   <div><h3>Events: each piece listens for a fact</h3><div class="evs" data-evs>${STEPS.map(n => `<span class="nd" data-l>${esc(n[0])}<small>listens for ${esc(n[1])}</small></span>`).join("")}</div><div class="note" data-note-ev>&nbsp;</div><div class="count" data-count-ev>&nbsp;</div></div></div></div>`;
 }
-const VIEW_CARDS = [["domains", "Domains", "every workflow card; click an event chip to see who listens"], ["records", "Records", "every record, its states and transitions"], ["rules", "Rules", "the nine rules and the Work Classification inputs"], ["humans", "Humans", "every place a person decides, with role and deadline"], ["notifications", "Notifications", "every message Helix sends, and its trigger"], ["notmodeled", "Not modeled", "what Helix has not taken on, and what would bring it in"]];
+const VIEW_CARDS = [["domains", "Domains", "every workflow card; click an event to see who listens"], ["records", "Records", "every record, its states and transitions"], ["rules", "Rules", "the nine rules and the Work Classification inputs"], ["humans", "Humans", "every place a person decides, with role and deadline"], ["notifications", "Notifications", "every message Helix sends, and its trigger"], ["notmodeled", "Not modeled", "what Helix has not taken on, and what would bring it in"]];
 function figViews() { return `<div class="views">${VIEW_CARDS.map(v => `<button data-view-go="${v[0]}">${v[1]}<small>${v[2]}</small></button>`).join("")}</div>`; }
 
 function startMount(c) {
@@ -417,7 +417,8 @@ function startMount(c) {
   if (sf) sf.querySelectorAll(".st").forEach(ch => ch.onclick = () => {
     const st = ch.dataset.st, rows = ((DOC.rules.transitions || {}).records || {})["Assignment"] || [];
     sf.querySelectorAll(".st").forEach(x => x.classList.toggle("on", x === ch));
-    const li = (r, dir) => `<li>${dir === "in" ? (r[0] ? `from <span class="st">${esc(r[0])}</span>` : "created") : `to <span class="st">${esc(r[1])}</span>`} when ${tq(r[3].replace(/\s*\([^()]*\)/g, ""))}</li>`;
+    const trig = txt => { const parts = txt.replace(/\s*\([^()]*\)/g, "").split(/,\s*/); return parts.map(x => /^[A-Z][\w-]*(\s+[A-Z][\w-]*)+$/.test(x.trim()) ? `on the event <span class="evx">${esc(x.trim())}</span>` : `when ${tq(x.trim())}`).join(", or "); };
+    const li = (r, dir) => `<li>${dir === "in" ? (r[0] ? `from <span class="st">${esc(r[0])}</span>` : `<b>record created</b> by ${esc(r[2])}`) : `to <span class="st">${esc(r[1])}</span>`} ${trig(r[3])}</li>`;
     const ins = rows.filter(r => r[1] === st), outs = rows.filter(r => r[0] === st);
     sf.querySelector("[data-sdetail]").innerHTML = `<div class="sdetail"><div><h4>How it gets to ${esc(st)}</h4>${ins.length ? `<ul>${ins.map(r => li(r, "in")).join("")}</ul>` : "Nothing moves it here."}</div><div><h4>Where it goes from ${esc(st)}</h4>${outs.length ? `<ul>${outs.map(r => li(r, "out")).join("")}</ul>` : "Nowhere: this state is final."}</div></div>`;
   });

@@ -324,6 +324,7 @@ button.nf[aria-pressed="true"]{background:var(--violet);border-color:var(--viole
 .start select{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line2);border-radius:999px;background:var(--bg2);color:var(--fg)}
 .start .tests{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;max-width:none}
 .start .tests div{padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--bg2);font-size:14px;color:var(--muted)}
+.start .tests small{display:block;font:500 11px var(--mono);color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin:-2px 0 6px}
 .start .tests b{display:block;color:var(--fg);margin-bottom:4px;font-family:var(--display)}
 /* layer ladder */
 .ladder{display:grid;gap:6px}
@@ -362,7 +363,7 @@ button.nf[aria-pressed="true"]{background:var(--violet);border-color:var(--viole
 .verbs .vb .st.to{border-color:var(--violet)}
 .verbs .vb .hp{display:inline-block;font:600 11px var(--mono);padding:1px 8px;border-radius:999px;border:1px solid var(--amber);color:var(--amber);margin-top:4px}
 .verbs .vb .evx{margin-top:4px}
-.verbs .evx{display:inline-block;font:500 12px var(--mono);padding:3px 9px;border-radius:7px;background:color-mix(in oklab,var(--violet) 14%,transparent);color:var(--fg)}
+.start .evx{display:inline-block;font:500 12px var(--mono);padding:3px 9px;border-radius:7px;background:color-mix(in oklab,var(--violet) 14%,transparent);color:var(--fg)}
 /* events side of the chain figure: each box says what it listens for */
 .evs{display:flex;flex-wrap:wrap;gap:8px}
 .evs .nd{display:grid;gap:2px}
@@ -450,33 +451,33 @@ button.nf[aria-pressed="true"]{background:var(--violet);border-color:var(--viole
 
 <!-- v18: the Start here primer. The words here are hand-written, like the hero lede; each [data-fig] is drawn by tail.js from the Doc. -->
 <template id="start-here">
-<div class="dhead"><h1>How to read this map</h1><p class="lead">Helix is a new, AI-native platform. This page is the map of it, built from the documents engineering builds from. Four ideas carry the whole thing: domains, workflows, records, events. Press play on each.</p></div>
+<div class="dhead"><h1>How to read this map</h1><p class="lead">Helix is a new, AI-native platform. This page is the map of it, built from the same documents engineering builds from. Four ideas carry the whole thing: domains, workflows, records, events. Each section has something to press.</p></div>
 <div class="start">
 <section>
 <h2>1. A domain owns its facts, and the boundaries are not drawn by taste</h2>
 <p>The business is cut into parts. Each part owns the facts it is the authority on and nothing else: Jobs owns job orders, Compliance owns who is cleared where, Finance owns time and pay. Three tests decide where a cut goes.</p>
-<div class="tests"><div><b>High cohesion</b>Things that change together live together. Time, payroll and billing are one domain, not three.</div><div><b>Low coupling</b>Parts talk only through events and read-only copies, never by reaching into each other's records.</div><div><b>No cycles</b>A domain may depend only on domains earlier in the flow. Try one below.</div></div>
+<div class="tests"><div><b>Things that change together live together</b><small>high cohesion</small>Time, payroll and billing are one domain, not three.</div><div><b>Parts never reach into each other</b><small>low coupling</small>Domains talk only through events and copies they can read but not change, never by reaching into each other's records.</div><div><b>Nothing depends on a later step</b><small>no cycles</small>A domain may depend only on domains earlier in the flow. Pick two domains below and check whether one may depend on the other.</div></div>
 <div data-fig="ladder"></div>
-<p>The fourth test is facts versus policies. A fact is what something is; a policy is what must happen to it. Facts live in Foundational Data; a policy lives with the workflow that enforces it. The question that sorts them: can you understand this record without knowing what any system does with it?</p>
+<p>The fourth test is facts versus policies. A fact is what something is; a policy is what must happen to it. Facts live in the Foundational Data domain; a policy lives with the workflow that enforces it. The question that sorts them: can you understand this piece of information without knowing what any workflow does with it?</p>
 <div data-fig="sorter"></div>
 </section>
 <section>
 <h2>2. A workflow asks, checks, decides, moves, announces</h2>
-<p>A workflow does five kinds of thing, and nothing else. It <b>asks for data</b> from a person, a client or a system. It <b>checks</b> that data against rules, where law beats a Helix standard and a Helix standard beats a contract term. It <b>hands a decision to a person</b> when a rule cannot make it, and the record waits in a Pending human step with a role, a reason and a deadline. It <b>moves its record</b> to the next state. And it <b>announces</b> what happened, so the rest of Helix can react. Every task on every card is one of those five. Play Offer Out.</p>
+<p>A workflow does five kinds of thing, and nothing else. It <b>asks for data</b> from a person, a client or a system. It <b>checks</b> that data against rules, where law beats a Helix standard and a Helix standard beats a contract term. It <b>hands a decision to a person</b> when a rule cannot make it, and the record waits in a Pending human step with a role, a reason and a deadline. It <b>moves its record</b> to the next state. And it <b>announces</b> what happened, so the rest of Helix can react. Every task on every workflow card in this map is one of those five. Play Offer Out.</p>
 <div data-fig="verbs"></div>
 </section>
 <section>
 <h2>3. A record is always in exactly one state</h2>
-<p>A Job, a Candidacy, an Offer, an Agreement, an Assignment. Each is in one state at a time, the state is the fact, and only its owning workflow moves it, on an event, with the move recorded. Click a state of the Assignment to see what moves it there and what moves it on.</p>
+<p>A Job, a Candidacy (one talent put forward for one job), an Offer, an Employment Agreement, an Assignment. Each is in one state at a time; the state is the fact Helix relies on; only one workflow, its owner, may move it; it moves when an event arrives; and every move is kept. Click a state of the Assignment to see what moves it there and what moves it on.</p>
 <div data-fig="states"></div>
-<p>Two records, one person: on assignment and submitted to the next job at the same time is not a contradiction.</p>
+<p>One talent, two records: being on assignment and submitted to the next job at the same time is not a contradiction, because each is its own record in its own state.</p>
 <div data-fig="two"></div>
 </section>
 <section>
 <h2>4. Events are how the parts talk, and why it is not a chain</h2>
-<p>When a workflow changes a state it announces the fact: Agreement Signed, Compliance Cleared, Start Confirmed. It does not call the next step. Whoever cares listens. Below, the same five pieces of work two ways. Now the business adds a step, Interview. Add it both ways.</p>
+<p>When a workflow changes a state it announces the fact: Agreement Signed, Compliance Cleared, Start Confirmed. It does not call the next step. Whoever cares listens. Below, the same five steps of a placement, built two ways: as a chain, and with events. Now the business adds a step, Interview. Add it both ways.</p>
 <div data-fig="events"></div>
-<p>In the chain, adding Interview changes three things and makes every placement pass through it, even for a client that selects straight from the submittal. With events, it changes one thing, runs only when a client asks for an interview, and nothing waits for it. The price is one name per fact, everywhere.</p>
+<p>In the chain, adding Interview changes three things and makes every placement pass through it, even for a client that picks the talent straight from the submission. With events, it changes one thing, runs only when a client asks for an interview, and nothing waits for it. The price: every fact has exactly one name, used everywhere.</p>
 </section>
 <section>
 <h2>Where to go next</h2>
