@@ -1,4 +1,4 @@
-# Explorer generator (v16, November 18, 2026)
+# Explorer generator (v17, November 20, 2026)
 
 Builds the Explorer page from the four master Docs. Nothing on the page is typed by hand.
 
@@ -71,3 +71,5 @@ gains a Notifications view with recipient and category filters; each event links
 and search covers the rows. No Notifies row on workflow cards yet.
 
 v16 (November 18, 2026): on the Records view each record's transitions table is a collapsed disclosure ("Transitions · n rows") under the card, opened per record by the viewer, so the view no longer scrolls through every table at once. tail.js (transHtml) and head.html (.trans) only; gen.py and the Doc format are unchanged.
+
+v17 (November 20, 2026): in a transitions table's Listens for cell, a capitalized comma-item that follows a lower-case source, is no event any workflow emits, and is not shaped like an event (two capitalized words in a row) is read as the tail of that source rather than a misspelled event, so "no Assignment in Started, Blocked or Ending" builds. A misspelled event after a source ("Assignment Voiced") still stops the run. gen.py only (split_events takes the emitted-event set; the Applies-to split uses maxsplit by keyword). tail.js and head.html are unchanged.

@@ -80,7 +80,7 @@ def applies(line):
     m = [g for g in re.findall(r'\(([^()]*)\)', line)
          if re.search(r'all six|all five|' + '|'.join(r'\b' + re.escape(t) + r'\b' for t in TYPES), g)]
     s = m[-1] if m else line
-    pos, neg = re.split(r'\bNot\b|\bnot\b', s, 1) if re.search(r'\bNot\b|\bnot\b', s) else (s, "")
+    pos, neg = re.split(r'\bNot\b|\bnot\b', s, maxsplit=1) if re.search(r'\bNot\b|\bnot\b', s) else (s, "")
     if re.search(r'\bonly\b', pos): pos = pos.split('only', 1)[0]   # "(Perm only)", "(IRP only: ...)"
     if re.search(r'all six (employment )?types', pos):
         types = list(HELIX) + (["IRP"] if "IRP" in pos else [])
@@ -279,7 +279,7 @@ def parse_transitions(md, records):
         out[rec] = rows
     return {"lede": lede, "records": out}
 
-def split_events(cell):
+def split_events(cell, known=None):
     """A Listens for or Emits cell -> list of (name, is_event). Items are comma-separated outside parentheses;
     a trailing parenthetical is a qualifier, not part of the name. An item that starts with a capital letter is
     an event name; one that starts in lower case is a source and is not checked."""
@@ -288,7 +288,14 @@ def split_events(cell):
     out = []
     for it in items:
         name = re.sub(r'\s*\([^()]*\)\s*$', '', it).strip()
-        out.append((name, bool(re.match(r'^[A-Z]', name))))
+        is_event = bool(re.match(r'^[A-Z]', name))
+        # v17: a capitalized item that follows a lower-case source, is no event any workflow emits, and is not
+        # shaped like one (two capitalized words in a row) is the tail of that source ("no Assignment in
+        # Started, Blocked or Ending"), not a misspelled event; "Assignment Voiced" after a source still stops the run.
+        if (is_event and known is not None and name not in known and out and not out[-1][1]
+                and not re.match(r'^[A-Z][\w-]*\s+[A-Z]', name)):
+            is_event = False
+        out.append((name, is_event))
     return out
 
 def check_transitions(doc):
@@ -320,7 +327,7 @@ def check_transitions(doc):
                 if not is_event: die(f"Record transitions: {rec}: {frm or 'Created'} -> {to}: Emits {name!r} is not an event name")
                 if name not in [re.sub(r'\s*\([^()]*\)\s*$', '', e).strip() for e in wfs[owner]["emits"]]:
                     die(f"Record transitions: {rec}: {frm or 'Created'} -> {to} emits {name!r}, which is not on {owner}'s Emits line (Rule 9: fix the name in one place, do not invent a third)")
-            for name, is_event in split_events(listens):
+            for name, is_event in split_events(listens, emitted):
                 if is_event and name not in emitted:
                     die(f"Record transitions: {rec}: {frm or 'Created'} -> {to} listens for {name!r}, which no workflow emits (Rule 9: use the emitter's name, or write a source in lower case)")
         missing = [s for s in states if s not in seen]
